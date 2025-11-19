@@ -216,38 +216,182 @@ export function normalizeComponentContent(component: any): Record<string, any> {
   
   // Normalize based on component type
   switch (component.component_type) {
-    case 'header':
+    case 'hero_banner': {
       normalized.title = content.title || '';
       normalized.subtitle = content.subtitle || '';
+      normalized.background_image = content.background_image || '';
+      normalized.background_video = content.background_video || '';
+      normalized.overlay_opacity = Math.min(
+        1,
+        Math.max(0, typeof content.overlay_opacity === 'number' ? content.overlay_opacity : 0.5),
+      );
+      normalized.cta_buttons = Array.isArray(content.cta_buttons)
+        ? content.cta_buttons.map((button: any) => ({
+            text: button?.text || 'Get Started',
+            url: button?.url || '#',
+            variant: ['secondary', 'ghost'].includes(button?.variant) ? button.variant : 'primary',
+          }))
+        : [];
       break;
-    
-    case 'about':
+    }
+
+    case 'about_me_card': {
+      normalized.name = content.name || '';
+      normalized.title = content.title || '';
       normalized.bio = content.bio || '';
-      break;
-    
-    case 'skills':
-      normalized.skills = normalizeSkills(content.skills);
-      break;
-    
-    case 'projects':
-      normalized.projects = validateProjects(content.projects);
-      break;
-    
-    case 'blog':
-      normalized.posts = validateBlogPosts(content.posts);
-      break;
-    
-    case 'contact':
-      normalized.email = validateEmail(content.email);
-      normalized.phone = content.phone ? String(content.phone).trim() : null;
-      normalized.location = content.location ? String(content.location).trim() : null;
-      normalized.social = {
-        linkedin: validateUrl(content.linkedin || content.social?.linkedin),
-        github: validateUrl(content.github || content.social?.github),
-        website: validateUrl(content.website || content.social?.website),
+      normalized.image = content.image || '';
+      normalized.social_links = {
+        linkedin: validateUrl(content.social_links?.linkedin || content.linkedin),
+        github: validateUrl(content.social_links?.github || content.github),
+        twitter: validateUrl(content.social_links?.twitter || content.twitter),
+        email: validateEmail(content.social_links?.email || content.email),
+        website: validateUrl(content.social_links?.website || content.website),
       };
       break;
-    
+    }
+
+    case 'skills_cloud': {
+      normalized.skills = normalizeSkills(content.skills);
+      normalized.display_mode = content.display_mode === 'bars' ? 'bars' : 'cloud';
+      break;
+    }
+
+    case 'experience_timeline': {
+      const experiences = Array.isArray(content.experiences) ? content.experiences : [];
+      normalized.experiences = experiences.map((exp: any) => ({
+        title: exp?.title || exp?.position || '',
+        company: exp?.company || '',
+        startDate: exp?.startDate || exp?.start_date || '',
+        endDate: exp?.endDate || exp?.end_date || '',
+        description: exp?.description || '',
+        location: exp?.location || '',
+      })).filter((exp: any) => exp.title || exp.company || exp.description);
+      break;
+    }
+
+    case 'project_grid': {
+      normalized.projects = validateProjects(content.projects);
+      normalized.filter_categories = Array.isArray(content.filter_categories)
+        ? content.filter_categories
+            .map((category: any) => String(category || '').trim())
+            .filter((category: string) => category.length > 0)
+        : [];
+      normalized.show_filters = Boolean(
+        content.show_filters === undefined ? true : content.show_filters,
+      );
+      normalized.code_snippets = Array.isArray(content.code_snippets)
+        ? content.code_snippets
+            .map((snippet: any) => ({
+              language: snippet?.language || 'text',
+              code: snippet?.code || '',
+              description: snippet?.description || '',
+              filename: snippet?.filename || '',
+            }))
+            .filter((snippet: any) => snippet.code)
+        : [];
+      break;
+    }
+
+    case 'services_section': {
+      const services = Array.isArray(content.services) ? content.services : [];
+      normalized.services = services
+        .map((service: any) => ({
+          title: service?.title || '',
+          description: service?.description || '',
+          icon: service?.icon || '',
+        }))
+        .filter((service: any) => service.title || service.description);
+      break;
+    }
+
+    case 'achievements_counters': {
+      const counters = Array.isArray(content.counters) ? content.counters : [];
+      normalized.counters = counters
+        .map((counter: any) => ({
+          label: counter?.label || '',
+          value: Number(counter?.value ?? 0),
+          prefix: counter?.prefix || '',
+          suffix: counter?.suffix || '',
+        }))
+        .filter((counter: any) => counter.label || counter.value);
+      break;
+    }
+
+    case 'testimonials_carousel': {
+      const testimonials = Array.isArray(content.testimonials) ? content.testimonials : [];
+      normalized.testimonials = testimonials
+        .map((testimonial: any) => ({
+          name: testimonial?.name || '',
+          role: testimonial?.role || '',
+          company: testimonial?.company || '',
+          content: testimonial?.content || testimonial?.quote || '',
+          image: testimonial?.image || '',
+          rating: Math.min(5, Math.max(1, Number(testimonial?.rating) || 0)),
+        }))
+        .filter((testimonial: any) => testimonial.content);
+      break;
+    }
+
+    case 'blog_preview_grid': {
+      normalized.posts = validateBlogPosts(content.posts);
+      const defaultPostsPerRow = 3;
+      const parsedValue = Number(content.posts_per_row);
+      normalized.posts_per_row =
+        parsedValue >= 1 && parsedValue <= 4 ? parsedValue : defaultPostsPerRow;
+      break;
+    }
+
+    case 'contact_form': {
+      normalized.title = content.title || 'Get In Touch';
+      normalized.description = content.description || '';
+      const allowedFields = ['name', 'email', 'phone', 'subject', 'message', 'company', 'budget'];
+      const fields = Array.isArray(content.fields) ? content.fields : ['name', 'email', 'message'];
+      normalized.fields = fields
+        .map((field: any) => String(field || '').toLowerCase().trim())
+        .filter((field: string, index: number, self: string[]) => field && allowedFields.includes(field) && self.indexOf(field) === index);
+      if (normalized.fields.length === 0) {
+        normalized.fields = ['name', 'email', 'message'];
+      }
+      normalized.submit_button_text = content.submit_button_text || 'Send Message';
+      break;
+    }
+
+    case 'footer': {
+      normalized.copyright_text = content.copyright_text || '';
+      normalized.links = Array.isArray(content.links)
+        ? content.links
+            .map((link: any) => ({
+              text: link?.text || '',
+              url: link?.url || '#',
+            }))
+            .filter((link: any) => link.text)
+        : [];
+      const columns = Array.isArray(content.columns) ? content.columns : [];
+      normalized.columns = columns
+        .map((column: any) => ({
+          title: column?.title || '',
+          links: Array.isArray(column?.links)
+            ? column.links
+                .map((link: any) => ({
+                  text: link?.text || '',
+                  url: link?.url || '#',
+                }))
+                .filter((link: any) => link.text)
+            : [],
+        }))
+        .filter((column: any) => column.title || column.links.length > 0);
+      normalized.social_links = {
+        linkedin: validateUrl(content.social_links?.linkedin || content.linkedin),
+        github: validateUrl(content.social_links?.github || content.github),
+        twitter: validateUrl(content.social_links?.twitter || content.twitter),
+        facebook: validateUrl(content.social_links?.facebook || content.facebook),
+        instagram: validateUrl(content.social_links?.instagram || content.instagram),
+        youtube: validateUrl(content.social_links?.youtube || content.youtube),
+        website: validateUrl(content.social_links?.website || content.website),
+      };
+      break;
+    }
+
     default:
       return content;
   }

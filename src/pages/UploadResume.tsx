@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Wand2, Trash2, FileText, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Wand2, Trash2, FileText, Loader2, Sparkles, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { resumeApi } from "@/lib/api";
+import { resumeApi, aiApi } from "@/lib/api";
 import FileUpload from "@/components/FileUpload";
 
 interface Resume {
@@ -25,6 +26,8 @@ const UploadResume = () => {
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
   const [extractedData, setExtractedData] = useState<any>(null);
   const [loadingExtractedData, setLoadingExtractedData] = useState(false);
+  const [generatingBio, setGeneratingBio] = useState(false);
+  const [generatedBio, setGeneratedBio] = useState<string | null>(null);
 
   useEffect(() => {
     loadResumes();
@@ -181,6 +184,7 @@ const UploadResume = () => {
       if (selectedResume?.id === resumeId) {
         setSelectedResume(null);
         setExtractedData(null);
+        setGeneratedBio(null);
       }
     } catch (error: any) {
       toast({
@@ -188,6 +192,36 @@ const UploadResume = () => {
         description: error.message || "Failed to delete resume",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleGenerateBio = async () => {
+    if (!extractedData?.structured_data) {
+      toast({
+        title: "No Resume Data",
+        description: "Please parse a resume first to generate bio",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setGeneratingBio(true);
+      setGeneratedBio(null);
+      const response = await aiApi.generateBio(extractedData.structured_data);
+      setGeneratedBio(response.bio);
+      toast({
+        title: "Success",
+        description: "Bio generated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate bio",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingBio(false);
     }
   };
 
@@ -218,9 +252,12 @@ const UploadResume = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden bg-professional-image">
+      {/* Professional Background Overlay */}
+      <div className="bg-overlay-light"></div>
+      
       {/* Navigation */}
-      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80">
+      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80 relative z-50">
         <div className="container mx-auto px-6 py-4">
           <Button
             variant="ghost"
@@ -234,7 +271,7 @@ const UploadResume = () => {
       </nav>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-12 max-w-6xl">
+      <div className="container mx-auto px-6 py-12 max-w-6xl relative z-10">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Upload Resume</h1>
           <p className="text-muted-foreground">
@@ -548,13 +585,84 @@ const UploadResume = () => {
                         )}
                       </div>
                     )}
-                    <div className="pt-4 border-t">
+                    <div className="pt-4 border-t space-y-3">
                       <Button
                         onClick={() => navigate("/generate-content", { state: { extractedData } })}
                         className="w-full"
                       >
                         Use This Data to Generate Content
                       </Button>
+                      
+                      {/* Generate Bio Section */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                            <span className="text-sm font-medium">Generate Bio</span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleGenerateBio}
+                            disabled={generatingBio}
+                            className="gap-2"
+                          >
+                            {generatingBio ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-4 h-4" />
+                                Generate Bio
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        
+                        {generatedBio && (
+                          <Card className="p-4 bg-primary/5 border-primary/20">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">Generated Bio</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setGeneratedBio(null)}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                              <Textarea
+                                value={generatedBio}
+                                onChange={(e) => setGeneratedBio(e.target.value)}
+                                className="min-h-[150px]"
+                                placeholder="Generated bio will appear here..."
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(generatedBio);
+                                    toast({
+                                      title: "Copied",
+                                      description: "Bio copied to clipboard",
+                                    });
+                                  }}
+                                  className="flex-1"
+                                >
+                                  <Check className="w-4 h-4 mr-2" />
+                                  Copy Bio
+                                </Button>
+                              </div>
+                            </div>
+                          </Card>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ) : selectedResume.status === "completed" ? (

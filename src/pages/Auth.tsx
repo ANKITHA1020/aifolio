@@ -10,6 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
 import { Separator } from "@/components/ui/separator";
 
+// Ensure page-specific CSS utilities are available (imports src/index.css)
+import "@/index.css";
+
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -17,6 +20,29 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
+
+  // Get image URL with cache-busting for development
+  const getImageUrl = (path: string) => {
+    const cacheBuster = import.meta.env.DEV ? `?v=${Date.now()}` : '?v=1';
+    return `${path}${cacheBuster}`;
+  };
+
+  const loginBgUrl = getImageUrl('/login-page.jpg');
+
+  // Preload background image
+  useEffect(() => {
+    const img = new Image();
+    img.src = loginBgUrl;
+    img.onload = () => {
+      setBackgroundImageLoaded(true);
+    };
+    img.onerror = () => {
+      console.warn('Failed to load login background image');
+      // Still set to true to show fallback
+      setBackgroundImageLoaded(true);
+    };
+  }, [loginBgUrl]);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -199,10 +225,22 @@ const Auth = () => {
     }
   };
 
+  // Inline style fallback for background image
+  const backgroundStyle = backgroundImageLoaded ? {
+    backgroundImage: `url(${loginBgUrl})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'fixed',
+  } : {};
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-background relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-hero opacity-10 blur-3xl"></div>
+    <div 
+      className="min-h-screen flex items-center justify-center px-6 py-12 bg-background relative overflow-hidden bg-auth-image"
+      style={backgroundStyle}
+    >
+      {/* Professional Background Overlay */}
+      <div className="bg-overlay-light"></div>
       
       <div className="w-full max-w-md relative">
         {/* Logo */}

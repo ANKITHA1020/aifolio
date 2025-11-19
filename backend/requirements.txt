@@ -14,4 +14,11 @@ markdown==3.6
 django-filter==24.1
 celery==5.3.6
 redis==5.0.1
+# WeasyPrint for PDF export (requires system dependencies)
+# Windows: pip install weasyprint[windows] or install GTK3 runtime separately
+# Linux: Install system packages (cairo, pango, etc.) before installing WeasyPrint
+# macOS: Install via Homebrew (cairo, pango, gdk-pixbuf, libffi) before installing WeasyPrint
+# See RUN_LOCAL.md section 3.5 for detailed installation instructions
+# Use: python manage.py check_weasyprint to verify installation
+weasyprint>=60.0
 

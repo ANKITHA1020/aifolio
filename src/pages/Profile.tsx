@@ -85,16 +85,21 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden bg-professional-image">
+        {/* Professional Background Overlay */}
+        <div className="bg-overlay-light"></div>
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden bg-professional-image">
+      {/* Professional Background Overlay */}
+      <div className="bg-overlay-light"></div>
+      
       {/* Navigation */}
-      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80">
+      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80 relative z-50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate("/dashboard")} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -117,7 +122,7 @@ const Profile = () => {
       </nav>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-12 max-w-4xl">
+      <div className="container mx-auto px-6 py-12 max-w-4xl relative z-10">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Edit Profile</h1>
           <p className="text-muted-foreground">

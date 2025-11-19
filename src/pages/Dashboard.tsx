@@ -16,6 +16,9 @@ import {
   Download,
   Search,
   BarChart3,
+  FolderOpen,
+  Globe,
+  FileEdit,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authApi, api, portfolioApi, resumeApi, dashboardApi } from "@/lib/api";
@@ -32,7 +35,7 @@ const Dashboard = () => {
   const loadPortfolios = async () => {
     try {
       setLoadingPortfolios(true);
-      const data = await portfolioApi.getPortfolios();
+      const data: any = await portfolioApi.getPortfolios();
       // Ensure data is an array
       const portfoliosArray = Array.isArray(data) ? data : (data?.results || data?.data || []);
       setPortfolios(portfoliosArray);
@@ -209,15 +212,20 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground relative overflow-hidden bg-professional-image-2">
+      {/* Professional Background Overlay */}
+      <div className="bg-overlay-dark"></div>
+      
       {/* Navigation */}
-      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80">
+      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/90 relative z-50 shadow-sm">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-primary"></div>
-            <span className="text-xl font-bold">PortfolioAI</span>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg">
+              <Sparkles className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">PortfolioAI</span>
           </div>
-          <Button variant="ghost" onClick={handleSignOut}>
+          <Button variant="ghost" onClick={handleSignOut} className="hover:bg-primary/10 hover:text-primary transition-colors">
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
           </Button>
@@ -225,87 +233,144 @@ const Dashboard = () => {
       </nav>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-12 max-w-6xl">
+      <div className="container mx-auto px-6 py-12 max-w-6xl relative z-10">
         {/* Welcome Section */}
         <div className="mb-12 animate-fade-in">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Welcome back!
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            {user?.email || user?.profile?.email || 'User'}
-          </p>
+          <Card className="p-8 md:p-10 bg-gradient-card border-border/50 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-hero opacity-10"></div>
+            <div className="absolute inset-0 bg-tech-grid opacity-20"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-glow">
+                  <Sparkles className="w-8 h-8 text-primary-foreground" />
+                </div>
+                <div className="flex-1">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-2">
+                    <span className="bg-gradient-primary bg-clip-text text-transparent">
+                      Welcome back!
+                    </span>
+                  </h1>
+                  <p className="text-lg md:text-xl text-foreground/80 font-medium">
+                    {user?.email || user?.profile?.email || 'User'}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 pt-6 border-t border-border/50">
+                <p className="text-muted-foreground">
+                  Ready to build something amazing? Let's create your next portfolio masterpiece.
+                </p>
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Quick Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-sm">
-            <div className="text-3xl font-bold mb-2">
-              {loadingPortfolios ? (
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              ) : (
-                portfoliosCount
-              )}
+          <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-md hover:shadow-2xl hover:scale-105 transition-all duration-300 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <FolderOpen className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
+                {loadingPortfolios ? (
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                ) : (
+                  portfoliosCount
+                )}
+              </div>
+              <div className="text-muted-foreground font-medium">Portfolios Created</div>
             </div>
-            <div className="text-muted-foreground">Portfolios Created</div>
           </Card>
-          <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-sm">
-            <div className="text-3xl font-bold mb-2">
-              {Array.isArray(portfolios) ? portfolios.filter((p) => p.is_published).length : 0}
+          <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-md hover:shadow-2xl hover:scale-105 transition-all duration-300 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <Globe className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
+                {Array.isArray(portfolios) ? portfolios.filter((p) => p.is_published).length : 0}
+              </div>
+              <div className="text-muted-foreground font-medium">Published</div>
             </div>
-            <div className="text-muted-foreground">Published</div>
           </Card>
-          <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-sm">
-            <div className="text-3xl font-bold mb-2">
-              {Array.isArray(portfolios) ? portfolios.filter((p) => !p.is_published).length : 0}
+          <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-md hover:shadow-2xl hover:scale-105 transition-all duration-300 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <FileEdit className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+                {Array.isArray(portfolios) ? portfolios.filter((p) => !p.is_published).length : 0}
+              </div>
+              <div className="text-muted-foreground font-medium">Drafts</div>
             </div>
-            <div className="text-muted-foreground">Drafts</div>
           </Card>
         </div>
 
         {/* Recent Portfolios */}
         {Array.isArray(portfolios) && portfolios.length > 0 && (
           <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-6">Recent Portfolios</h2>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1 h-8 bg-gradient-primary rounded-full"></div>
+              <h2 className="text-2xl md:text-3xl font-bold">Recent Portfolios</h2>
+            </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {portfolios.slice(0, 6).map((portfolio) => (
                 <Card
                   key={portfolio.id}
-                  className="p-6 cursor-pointer hover:border-primary/50 transition-all"
+                  className="p-6 cursor-pointer hover:border-primary/50 hover:shadow-2xl hover:scale-105 transition-all duration-300 group relative overflow-hidden bg-gradient-card border-border/50 backdrop-blur-md"
                   onClick={() => navigate(`/portfolio-preview/${portfolio.id}`)}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold truncate">{portfolio.title}</h3>
-                    {portfolio.is_published && (
-                      <span className="px-2 py-1 bg-green-500/10 text-green-500 rounded-full text-xs">
-                        Live
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {portfolio.template_type} template
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/portfolio-preview/${portfolio.id}`);
-                      }}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      View
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/portfolio-builder?id=${portfolio.id}`);
-                      }}
-                    >
-                      Edit
-                    </Button>
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg mb-1 truncate group-hover:text-primary transition-colors">
+                          {portfolio.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {portfolio.template_type || 'Standard'} template
+                        </p>
+                      </div>
+                      {portfolio.is_published && (
+                        <span className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
+                          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                          Live
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 hover:bg-primary hover:text-primary-foreground transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/portfolio-preview/${portfolio.id}`);
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 hover:bg-primary/10 hover:text-primary transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/portfolio-builder?id=${portfolio.id}`);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               ))}
@@ -315,57 +380,70 @@ const Dashboard = () => {
 
         {/* Quick Actions */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Quick Actions</h2>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-1 h-8 bg-gradient-primary rounded-full"></div>
+            <h2 className="text-2xl md:text-3xl font-bold">Quick Actions</h2>
+          </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {quickActions.map((action, index) => (
               <Card
                 key={index}
-                className="p-6 bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:shadow-card cursor-pointer group"
+                className="p-6 bg-gradient-card border-border/50 backdrop-blur-xl hover:border-primary/50 transition-all hover:shadow-2xl cursor-pointer group hover:scale-105 relative overflow-hidden"
                 onClick={action.action}
               >
-                <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${action.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                  <action.icon className="w-6 h-6 text-white" />
+                <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-10 transition-opacity`}></div>
+                <div className="relative z-10">
+                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${action.gradient} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg`}>
+                    <action.icon className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors">{action.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{action.description}</p>
                 </div>
-                <h3 className="font-semibold mb-2">{action.title}</h3>
-                <p className="text-sm text-muted-foreground">{action.description}</p>
               </Card>
             ))}
           </div>
         </div>
 
         {/* Getting Started */}
-        <Card className="p-8 bg-gradient-card border-border/50 shadow-elevated relative overflow-hidden">
+        <Card className="p-8 md:p-10 bg-gradient-card border-border/50 shadow-2xl relative overflow-hidden backdrop-blur-xl">
           <div className="absolute inset-0 bg-gradient-hero opacity-10"></div>
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <Sparkles className="w-6 h-6 text-primary" />
-              <h2 className="text-2xl font-bold">Getting Started</h2>
+          <div className="absolute inset-0 bg-tech-grid opacity-20"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl"></div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-glow">
+                <Sparkles className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold mb-1">Getting Started</h2>
+                <p className="text-muted-foreground">Create your first AI-powered portfolio in just a few steps</p>
+              </div>
             </div>
-            <p className="text-muted-foreground mb-6">
-              Create your first AI-powered portfolio in just a few steps:
-            </p>
-            <ol className="space-y-3 mb-6">
-              <li className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">1</div>
-                <span>Upload your resume or enter your information manually</span>
+            <ol className="space-y-4 mb-8">
+              <li className="flex items-start gap-4 p-4 rounded-xl bg-card/40 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all group">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary text-primary-foreground flex items-center justify-center text-lg font-bold shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">1</div>
+                <span className="pt-2 text-foreground/90 font-medium">Upload your resume or enter your information manually</span>
               </li>
-              <li className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">2</div>
-                <span>Let AI generate professional content for your portfolio</span>
+              <li className="flex items-start gap-4 p-4 rounded-xl bg-card/40 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all group">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary text-primary-foreground flex items-center justify-center text-lg font-bold shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">2</div>
+                <span className="pt-2 text-foreground/90 font-medium">Let AI generate professional content for your portfolio</span>
               </li>
-              <li className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">3</div>
-                <span>Choose a template and customize your design</span>
+              <li className="flex items-start gap-4 p-4 rounded-xl bg-card/40 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all group">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary text-primary-foreground flex items-center justify-center text-lg font-bold shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">3</div>
+                <span className="pt-2 text-foreground/90 font-medium">Choose a template and customize your design</span>
               </li>
-              <li className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">4</div>
-                <span>Publish and share your portfolio with the world</span>
+              <li className="flex items-start gap-4 p-4 rounded-xl bg-card/40 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all group">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary text-primary-foreground flex items-center justify-center text-lg font-bold shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">4</div>
+                <span className="pt-2 text-foreground/90 font-medium">Publish and share your portfolio with the world</span>
               </li>
             </ol>
             <Button
-              className="bg-gradient-primary hover:opacity-90 transition-opacity"
+              size="lg"
+              className="bg-gradient-primary hover:opacity-90 transition-opacity text-lg px-8 py-6 shadow-glow w-full md:w-auto"
               onClick={() => navigate("/upload-resume")}
             >
+              <Sparkles className="w-5 h-5 mr-2" />
               Start Building Now
             </Button>
           </div>

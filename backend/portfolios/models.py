@@ -93,6 +93,7 @@ class PortfolioComponent(models.Model):
     Modular portfolio components (Header, About, Skills, Projects, Blog, Contact)
     """
     COMPONENT_TYPE_CHOICES = [
+        # Legacy types (keep for backward compatibility)
         ('header', 'Header'),
         ('about', 'About'),
         ('skills', 'Skills'),
@@ -100,6 +101,18 @@ class PortfolioComponent(models.Model):
         ('blog', 'Blog'),
         ('contact', 'Contact'),
         ('custom', 'Custom'),
+        # New component types
+        ('hero_banner', 'Hero Banner'),
+        ('about_me_card', 'About Me Card'),
+        ('skills_cloud', 'Skills Cloud'),
+        ('experience_timeline', 'Experience Timeline'),
+        ('project_grid', 'Project Grid'),
+        ('services_section', 'Services Section'),
+        ('achievements_counters', 'Achievements Counters'),
+        ('testimonials_carousel', 'Testimonials Carousel'),
+        ('blog_preview_grid', 'Blog Preview Grid'),
+        ('contact_form', 'Contact Form'),
+        ('footer', 'Footer'),
     ]
     
     portfolio = models.ForeignKey(
@@ -107,7 +120,7 @@ class PortfolioComponent(models.Model):
         on_delete=models.CASCADE, 
         related_name='components'
     )
-    component_type = models.CharField(max_length=20, choices=COMPONENT_TYPE_CHOICES)
+    component_type = models.CharField(max_length=25, choices=COMPONENT_TYPE_CHOICES)
     order = models.IntegerField(
         default=0,
         validators=[MinValueValidator(0)],

@@ -100,9 +100,12 @@ const ChooseTemplate = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden bg-professional-image">
+      {/* Professional Background Overlay */}
+      <div className="bg-overlay-light"></div>
+      
       {/* Navigation */}
-      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80">
+      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80 relative z-50">
         <div className="container mx-auto px-6 py-4">
           <Button variant="ghost" onClick={() => navigate("/dashboard")} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -112,7 +115,7 @@ const ChooseTemplate = () => {
       </nav>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-12 max-w-7xl">
+      <div className="container mx-auto px-6 py-12 max-w-7xl relative z-10">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Choose Template</h1>
           <p className="text-muted-foreground">
@@ -121,7 +124,7 @@ const ChooseTemplate = () => {
         </div>
 
         {/* Filters and View Controls */}
-        <Card className="p-4 mb-6">
+        <Card className="p-4 mb-6 backdrop-blur-md bg-card/60 border-border/50">
           <div className="space-y-4">
             {/* Search */}
             <div className="relative">

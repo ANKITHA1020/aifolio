@@ -19,48 +19,68 @@ class GeminiClient:
     def __init__(self):
         self.api_key = None
         self.model = None
-        self.model_name = None
+        self.model_name = None  # Short name (e.g., "gemini-2.0-flash")
+        self.model_name_full = None  # Full name (e.g., "models/gemini-2.0-flash")
         self._initialized = False
-        # Prefer models with better free tier limits
+        self.available_models_list = []  # Store list of available models
+        # Prefer models with better free tier limits - updated to match current available models
         self.preferred_models = [
-            'gemini-1.5-flash',  # Best free tier limits
-            'gemini-1.5-pro',
-            'gemini-pro',
-            'gemini-2.0-flash-exp',
+            'gemini-2.0-flash',  # Stable and fast
+            'gemini-2.5-flash',  # Latest stable
+            'gemini-flash-latest',  # Always latest
+            'gemini-2.0-flash-exp',  # Experimental but available
+            'gemini-2.5-flash-lite',  # Lightweight option
         ]
     
-    def _get_available_models(self) -> Optional[str]:
-        """List available models and return the first usable one, preferring stable models"""
+    def _get_available_models(self) -> Optional[Tuple[str, str]]:
+        """
+        List available models and return the first usable one, preferring stable models
+        Returns: (model_name_short, model_name_full) tuple
+        """
         try:
             models = genai.list_models()
-            available_model_names = []
+            available_models = []  # List of (short_name, full_name) tuples
             
-            # Collect all available models
+            # Collect all available models with their full names
             for model in models:
                 if 'generateContent' in model.supported_generation_methods:
-                    model_name = model.name.replace('models/', '')
-                    available_model_names.append(model_name)
+                    full_name = model.name  # e.g., "models/gemini-2.0-flash"
+                    short_name = full_name.replace('models/', '')  # e.g., "gemini-2.0-flash"
+                    available_models.append((short_name, full_name))
+                    print(f"Available model: {full_name} (short: {short_name})")
             
-            # Prefer models from our preferred list (avoid experimental models for free tier)
-            for preferred in self.preferred_models:
-                if preferred in available_model_names:
-                    print(f"Found preferred model: {preferred}")
-                    return preferred
+            # Store available models for fallback use
+            self.available_models_list = available_models
+            
+            if not available_models:
+                print("No models with generateContent support found")
+                return None
+            
+            # Prefer models from our preferred list (updated to match current available models)
+            preferred_order = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash-exp', 'gemini-2.5-flash-lite']
+            for preferred in preferred_order:
+                for short_name, full_name in available_models:
+                    if preferred == short_name:
+                        print(f"Found preferred model: {full_name}")
+                        return (short_name, full_name)
             
             # If no preferred model found, return first available (but avoid experimental)
-            for model_name in available_model_names:
-                if 'exp' not in model_name.lower() and 'experimental' not in model_name.lower():
-                    print(f"Found available model: {model_name}")
-                    return model_name
+            for short_name, full_name in available_models:
+                if 'exp' not in short_name.lower() and 'experimental' not in short_name.lower() and 'preview' not in short_name.lower():
+                    print(f"Found available model: {full_name}")
+                    return (short_name, full_name)
             
             # Last resort: return first available
-            if available_model_names:
-                print(f"Using available model: {available_model_names[0]}")
-                return available_model_names[0]
+            if available_models:
+                short_name, full_name = available_models[0]
+                print(f"Using available model: {full_name}")
+                return (short_name, full_name)
             
             return None
         except Exception as e:
             print(f"Error listing models: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     def _initialize(self):
@@ -71,27 +91,90 @@ class GeminiClient:
                 try:
                     genai.configure(api_key=self.api_key)
                     # List available models and use the first one that supports generateContent
-                    available_model = self._get_available_models()
-                    if available_model:
-                        self.model_name = available_model
-                        self.model = genai.GenerativeModel(available_model)
-                        print(f"Initialized Gemini with model: {available_model}")
+                    model_info = self._get_available_models()
+                    if model_info:
+                        short_name, full_name = model_info
+                        try:
+                            # Use the full model name (with "models/" prefix)
+                            self.model = genai.GenerativeModel(full_name)
+                            self.model_name = short_name
+                            self.model_name_full = full_name
+                            print(f"Initialized Gemini with model: {full_name} (short: {short_name})")
+                        except Exception as e:
+                            print(f"Error initializing model {full_name}: {e}")
+                            import traceback
+                            traceback.print_exc()
+                            # Try fallback models
+                            self._try_fallback_initialization()
                     else:
                         # Fallback: try preferred model names
-                        for model_name in self.preferred_models:
-                            try:
-                                self.model = genai.GenerativeModel(model_name)
-                                self.model_name = model_name
-                                print(f"Initialized Gemini with fallback model: {model_name}")
-                                break
-                            except Exception:
-                                continue
-                        if not self.model:
-                            print("Warning: Could not initialize any Gemini model")
+                        print("No models found from list_models(), trying fallback initialization")
+                        self._try_fallback_initialization()
                 except Exception as e:
                     print(f"Warning: Failed to initialize Gemini client: {e}")
-                    self.model = None
+                    # Try fallback initialization
+                    self._try_fallback_initialization()
             self._initialized = True
+    
+    def _try_fallback_initialization(self):
+        """Try to initialize with fallback models"""
+        # First, try to use available models from the list if we have them
+        if self.available_models_list:
+            # Prefer stable models (non-experimental, non-preview)
+            for short_name, full_name in self.available_models_list:
+                if 'exp' not in short_name.lower() and 'preview' not in short_name.lower() and 'experimental' not in short_name.lower():
+                    try:
+                        self.model = genai.GenerativeModel(full_name)
+                        self.model_name = short_name
+                        self.model_name_full = full_name
+                        print(f"Initialized Gemini with fallback model: {full_name} (short: {short_name})")
+                        return
+                    except Exception as e:
+                        print(f"Failed to initialize {full_name}: {e}")
+                        continue
+            
+            # If no stable model works, try any available model
+            for short_name, full_name in self.available_models_list:
+                try:
+                    self.model = genai.GenerativeModel(full_name)
+                    self.model_name = short_name
+                    self.model_name_full = full_name
+                    print(f"Initialized Gemini with fallback model: {full_name} (short: {short_name})")
+                    return
+                except Exception as e:
+                    print(f"Failed to initialize {full_name}: {e}")
+                    continue
+        
+        # Last resort: try preferred models (updated to match current available models)
+        fallback_models = [
+            'models/gemini-2.0-flash',
+            'gemini-2.0-flash',
+            'models/gemini-2.5-flash',
+            'gemini-2.5-flash',
+            'models/gemini-flash-latest',
+            'gemini-flash-latest',
+            'models/gemini-2.0-flash-exp',
+            'gemini-2.0-flash-exp',
+        ]
+        for model_name in fallback_models:
+            try:
+                self.model = genai.GenerativeModel(model_name)
+                # Store both short and full names
+                if model_name.startswith('models/'):
+                    self.model_name_full = model_name
+                    self.model_name = model_name.replace('models/', '')
+                else:
+                    self.model_name = model_name
+                    self.model_name_full = f'models/{model_name}'
+                print(f"Initialized Gemini with fallback model: {self.model_name_full} (short: {self.model_name})")
+                return
+            except Exception as e:
+                print(f"Failed to initialize {model_name}: {e}")
+                continue
+        print("Warning: Could not initialize any Gemini model")
+        self.model = None
+        self.model_name = None
+        self.model_name_full = None
     
     def is_configured(self) -> bool:
         """Check if Gemini is configured"""
@@ -149,18 +232,45 @@ class GeminiClient:
     def _try_fallback_model(self, current_model_name: str) -> Optional[genai.GenerativeModel]:
         """Try to get a fallback model if current one has quota issues"""
         if not current_model_name:
-            current_model_name = self.model_name or ""
+            current_model_name = self.model_name_full or self.model_name or ""
         
-        # Try other preferred models
+        # Extract short name if full name provided
+        current_short = current_model_name.replace('models/', '')
+        
+        # First, try to use available models from the list
+        if self.available_models_list:
+            for short_name, full_name in self.available_models_list:
+                if short_name != current_short:
+                    try:
+                        model = genai.GenerativeModel(full_name)
+                        self.model_name = short_name
+                        self.model_name_full = full_name
+                        print(f"Switched to fallback model: {full_name} (short: {short_name})")
+                        return model
+                    except Exception as e:
+                        print(f"Failed to switch to {full_name}: {e}")
+                        continue
+        
+        # Fallback: try preferred models (with models/ prefix)
         for model_name in self.preferred_models:
-            if model_name != current_model_name:
+            if model_name != current_short:
+                # Try with models/ prefix first
                 try:
-                    model = genai.GenerativeModel(model_name)
+                    model = genai.GenerativeModel(f'models/{model_name}')
                     self.model_name = model_name
-                    print(f"Switched to fallback model: {model_name}")
+                    self.model_name_full = f'models/{model_name}'
+                    print(f"Switched to fallback model: models/{model_name}")
                     return model
                 except Exception:
-                    continue
+                    # Try without prefix
+                    try:
+                        model = genai.GenerativeModel(model_name)
+                        self.model_name = model_name
+                        self.model_name_full = f'models/{model_name}'
+                        print(f"Switched to fallback model: {model_name}")
+                        return model
+                    except Exception:
+                        continue
         
         return None
     
@@ -197,19 +307,40 @@ class GeminiClient:
         model_instance = None
         current_model_name = None
         
-        if model in ["gemini-pro", "gemini-1.5-flash"] or not model:
+        # Always use the initialized model if available, or try to get a working model
+        if not model or model in ["gemini-pro", "gemini-1.5-flash", "gemini-1.5-pro"]:
             # Use the initialized model
-            model_instance = self.model
-            current_model_name = self.model_name
+            if self.model:
+                model_instance = self.model
+                current_model_name = self.model_name_full or self.model_name
+            else:
+                # Try to reinitialize
+                self._initialize()
+                if self.model:
+                    model_instance = self.model
+                    current_model_name = self.model_name_full or self.model_name
+                else:
+                    return f"[AI Error] No Gemini model available. Please check your API key and model configuration."
         else:
+            # Try to use the specified model
             try:
-                model_instance = genai.GenerativeModel(model)
-                current_model_name = model
-            except Exception:
+                # Try with models/ prefix first
+                if not model.startswith('models/'):
+                    try:
+                        model_instance = genai.GenerativeModel(f'models/{model}')
+                        current_model_name = f'models/{model}'
+                    except:
+                        model_instance = genai.GenerativeModel(model)
+                        current_model_name = model
+                else:
+                    model_instance = genai.GenerativeModel(model)
+                    current_model_name = model
+            except Exception as e:
+                print(f"Error creating model {model}: {e}")
                 # Fallback to default model if specified model fails
                 if self.model:
                     model_instance = self.model
-                    current_model_name = self.model_name
+                    current_model_name = self.model_name_full or self.model_name
                 else:
                     return f"[AI Generated - Placeholder]\nGemini model '{model}' not available. Please check your API configuration.\n\nBased on your prompt: {prompt[:100]}..."
         
@@ -233,6 +364,23 @@ class GeminiClient:
                 
             except Exception as e:
                 last_error = e
+                error_str = str(e)
+                
+                # Check for model not found or API version errors
+                if '404' in error_str and ('not found' in error_str.lower() or 'not supported' in error_str.lower()):
+                    # Try to reinitialize with a different model
+                    print(f"Model error detected: {error_str}")
+                    if attempt == 0:
+                        # Try to switch to a different model
+                        fallback_model = self._try_fallback_model(current_model_name)
+                        if fallback_model:
+                            model_instance = fallback_model
+                            current_model_name = self.model_name
+                            print(f"Retrying with fallback model: {current_model_name}")
+                            continue
+                    # If we can't switch models, return error
+                    return f"[AI Error] Model '{current_model_name}' is not available or not supported. Please check your API key and model configuration. Error: {error_str[:200]}"
+                
                 is_quota, retry_delay = self._is_quota_error(e)
                 
                 if is_quota:
@@ -301,17 +449,39 @@ class GeminiClient:
         model_instance = None
         current_model_name = None
         
-        if model in ["gemini-pro", "gemini-1.5-flash"] or not model:
-            model_instance = self.model
-            current_model_name = self.model_name
-        else:
-            try:
-                model_instance = genai.GenerativeModel(model)
-                current_model_name = model
-            except Exception:
+        # Always use the initialized model if available, or try to get a working model
+        if not model or model in ["gemini-pro", "gemini-1.5-flash", "gemini-1.5-pro"]:
+            # Use the initialized model
+            if self.model:
+                model_instance = self.model
+                current_model_name = self.model_name_full or self.model_name
+            else:
+                # Try to reinitialize
+                self._initialize()
                 if self.model:
                     model_instance = self.model
-                    current_model_name = self.model_name
+                    current_model_name = self.model_name_full or self.model_name
+                else:
+                    return {"status": "error", "error": "No Gemini model available. Please check your API key and model configuration."}
+        else:
+            # Try to use the specified model
+            try:
+                # Try with models/ prefix first
+                if not model.startswith('models/'):
+                    try:
+                        model_instance = genai.GenerativeModel(f'models/{model}')
+                        current_model_name = f'models/{model}'
+                    except:
+                        model_instance = genai.GenerativeModel(model)
+                        current_model_name = model
+                else:
+                    model_instance = genai.GenerativeModel(model)
+                    current_model_name = model
+            except Exception as e:
+                print(f"Error creating model {model}: {e}")
+                if self.model:
+                    model_instance = self.model
+                    current_model_name = self.model_name_full or self.model_name
                 else:
                     return {"status": "error", "error": f"Gemini model '{model}' not available"}
         
@@ -364,6 +534,27 @@ Return your response as a valid JSON object."""
                     
             except Exception as e:
                 last_error = e
+                error_str = str(e)
+                
+                # Check for model not found or API version errors
+                if '404' in error_str and ('not found' in error_str.lower() or 'not supported' in error_str.lower()):
+                    # Try to reinitialize with a different model
+                    print(f"Model error detected: {error_str}")
+                    if attempt == 0:
+                        # Try to switch to a different model
+                        fallback_model = self._try_fallback_model(current_model_name)
+                        if fallback_model:
+                            model_instance = fallback_model
+                            current_model_name = self.model_name
+                            print(f"Retrying with fallback model: {current_model_name}")
+                            continue
+                    # If we can't switch models, return error
+                    return {
+                        "status": "error",
+                        "error": f"Model '{current_model_name}' is not available or not supported. Please check your API key and model configuration.",
+                        "details": error_str[:200]
+                    }
+                
                 is_quota, retry_delay = self._is_quota_error(e)
                 
                 if is_quota:

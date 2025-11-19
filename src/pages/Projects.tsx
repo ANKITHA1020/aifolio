@@ -45,6 +45,133 @@ interface Project {
   updated_at: string;
 }
 
+// Mock projects data for demonstration
+const mockProjects: Project[] = [
+  {
+    id: -1,
+    title: "E-Commerce Platform",
+    description: "A full-stack e-commerce platform built with modern web technologies. Features include user authentication, product catalog, shopping cart, payment integration, and admin dashboard. The platform supports multiple payment methods and provides real-time inventory management.",
+    short_description: "Full-stack e-commerce platform with payment integration and admin dashboard",
+    image: null,
+    category: { id: 1, name: "Web Application" },
+    tags: [
+      { id: 1, name: "React" },
+      { id: 2, name: "Node.js" },
+      { id: 3, name: "MongoDB" },
+      { id: 4, name: "Express" },
+      { id: 5, name: "Stripe API" }
+    ],
+    github_url: "https://github.com/example/ecommerce-platform",
+    live_url: "https://ecommerce-demo.example.com",
+    featured: false,
+    order: 1,
+    created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: -2,
+    title: "Task Management App",
+    description: "A collaborative task management application designed for teams. Includes features like project boards, task assignments, deadlines, progress tracking, and team collaboration tools. Built with Vue.js for the frontend and Express.js for the backend, with real-time updates using WebSockets.",
+    short_description: "Collaborative task management app with real-time updates and team collaboration",
+    image: null,
+    category: { id: 1, name: "Web Application" },
+    tags: [
+      { id: 6, name: "Vue.js" },
+      { id: 7, name: "Express" },
+      { id: 8, name: "PostgreSQL" },
+      { id: 9, name: "WebSockets" },
+      { id: 10, name: "TypeScript" }
+    ],
+    github_url: "https://github.com/example/task-manager",
+    live_url: "https://tasks-demo.example.com",
+    featured: false,
+    order: 2,
+    created_at: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: -3,
+    title: "Weather Dashboard",
+    description: "A beautiful weather dashboard application that displays current weather conditions and forecasts. Features include location-based weather data, interactive maps, weather alerts, and customizable widgets. Built with React and TypeScript for type safety and excellent developer experience.",
+    short_description: "Interactive weather dashboard with forecasts and location-based data",
+    image: null,
+    category: { id: 2, name: "Dashboard" },
+    tags: [
+      { id: 1, name: "React" },
+      { id: 10, name: "TypeScript" },
+      { id: 11, name: "OpenWeather API" },
+      { id: 12, name: "Chart.js" }
+    ],
+    github_url: "https://github.com/example/weather-dashboard",
+    live_url: "https://weather-demo.example.com",
+    featured: false,
+    order: 3,
+    created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: -4,
+    title: "Social Media Analytics Tool",
+    description: "A comprehensive analytics platform for social media management. Provides insights into engagement metrics, audience demographics, content performance, and competitor analysis. Built with Next.js for server-side rendering and optimal performance, with Python backend for data processing.",
+    short_description: "Social media analytics platform with engagement metrics and insights",
+    image: null,
+    category: { id: 3, name: "Analytics" },
+    tags: [
+      { id: 13, name: "Next.js" },
+      { id: 14, name: "Python" },
+      { id: 15, name: "Redis" },
+      { id: 16, name: "D3.js" },
+      { id: 17, name: "PostgreSQL" }
+    ],
+    github_url: "https://github.com/example/social-analytics",
+    live_url: "https://analytics-demo.example.com",
+    featured: false,
+    order: 4,
+    created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: -5,
+    title: "Portfolio Website Builder",
+    description: "An intuitive drag-and-drop portfolio website builder that allows users to create stunning portfolios without coding. Features include multiple templates, custom themes, responsive design, SEO optimization, and one-click deployment. Built with React and Tailwind CSS for modern, responsive designs.",
+    short_description: "Drag-and-drop portfolio builder with templates and custom themes",
+    image: null,
+    category: { id: 1, name: "Web Application" },
+    tags: [
+      { id: 1, name: "React" },
+      { id: 18, name: "Tailwind CSS" },
+      { id: 19, name: "Framer Motion" },
+      { id: 20, name: "Firebase" }
+    ],
+    github_url: "https://github.com/example/portfolio-builder",
+    live_url: "https://portfolio-builder-demo.example.com",
+    featured: true,
+    order: 0,
+    created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: -6,
+    title: "AI Chatbot Interface",
+    description: "An intelligent chatbot interface powered by OpenAI's GPT models. Features include natural language processing, context-aware conversations, multi-language support, and customizable personality. The interface is built with React and provides a smooth, conversational user experience.",
+    short_description: "Intelligent chatbot interface with GPT integration and natural language processing",
+    image: null,
+    category: { id: 4, name: "AI/ML" },
+    tags: [
+      { id: 1, name: "React" },
+      { id: 10, name: "TypeScript" },
+      { id: 21, name: "OpenAI API" },
+      { id: 22, name: "WebSockets" }
+    ],
+    github_url: "https://github.com/example/ai-chatbot",
+    live_url: "https://chatbot-demo.example.com",
+    featured: true,
+    order: 0,
+    created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
 const Projects = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -80,12 +207,17 @@ const Projects = () => {
     try {
       setLoading(true);
       const data = await projectApi.getProjects();
-      setProjects(Array.isArray(data) ? data : []);
+      const loadedProjects = Array.isArray(data) ? data : [];
+      // Use mock data if no projects are loaded
+      setProjects(loadedProjects.length > 0 ? loadedProjects : mockProjects);
     } catch (error: any) {
+      // On error, use mock data as fallback
+      console.warn("Failed to load projects from API, using mock data:", error);
+      setProjects(mockProjects);
       toast({
-        title: "Error",
-        description: error.message || "Failed to load projects",
-        variant: "destructive",
+        title: "Info",
+        description: "Using demo projects. Connect to backend to manage your own projects.",
+        variant: "default",
       });
     } finally {
       setLoading(false);
@@ -120,6 +252,15 @@ const Projects = () => {
   };
 
   const handleEdit = (project: Project) => {
+    // Prevent editing mock projects
+    if (project.id < 0) {
+      toast({
+        title: "Info",
+        description: "This is a demo project. Create your own project to edit it.",
+        variant: "default",
+      });
+      return;
+    }
     setEditingProject(project);
     const techTags = project.tags.map((t) => t.name).join(", ");
     setAiTechnologies(techTags);
@@ -187,6 +328,16 @@ const Projects = () => {
   };
 
   const handleDelete = async (id: number) => {
+    // Prevent deleting mock projects
+    if (id < 0) {
+      toast({
+        title: "Info",
+        description: "This is a demo project. Create your own project to delete it.",
+        variant: "default",
+      });
+      return;
+    }
+    
     if (!confirm("Are you sure you want to delete this project?")) return;
 
     try {
@@ -211,8 +362,11 @@ const Projects = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80">
+    <div className="min-h-screen bg-background relative overflow-hidden bg-professional-image">
+      {/* Professional Background Overlay */}
+      <div className="bg-overlay-light"></div>
+      
+      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80 relative z-50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate("/dashboard")} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -225,7 +379,7 @@ const Projects = () => {
         </div>
       </nav>
 
-      <div className="container mx-auto px-6 py-12 max-w-7xl">
+      <div className="container mx-auto px-6 py-12 max-w-7xl relative z-10">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Projects</h1>
           <p className="text-muted-foreground">Manage your portfolio projects</p>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ portfolio.title }} - Portfolio</title>
+    <meta name="description" content="{{ portfolio.meta_description|default:portfolio.seo_description|default:portfolio.title }}">
+    <meta name="keywords" content="{{ portfolio.meta_keywords|default:portfolio.seo_keywords }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #fff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header Styles */
+        .header {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            font-size: 1.5rem;
+            opacity: 0.9;
+        }
+        
+        .profile-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 20px auto;
+            display: block;
+            border: 5px solid white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Section Styles */
+        .section {
+            margin-bottom: 60px;
+            padding: 40px 20px;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            color: #333;
+        }
+        
+        /* About Section */
+        .about-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #555;
+        }
+        
+        /* Skills Section */
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .skill-tag {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+        
+        /* Projects Section */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .project-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .project-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .project-content {
+            padding: 20px;
+        }
+        
+        .project-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .project-description {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .project-technologies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .tech-tag {
+            background: #f0f0f0;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .project-links {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .project-link {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .project-link:hover {
+            background: #5568d3;
+        }
+        
+        /* Blog Section */
+        .blog-posts {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .blog-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .blog-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .blog-content {
+            padding: 20px;
+        }
+        
+        .blog-title {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .blog-excerpt {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .blog-date {
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        /* Contact Section */
+        .contact-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .contact-item {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .contact-label {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .contact-value {
+            color: #333;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .social-link {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        
+        .social-link:hover {
+            background: #5568d3;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            background: #f8f9fa;
+            color: #666;
+            margin-top: 60px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .projects-grid,
+            .blog-posts {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        {% if header_component %}
+        <div class="header">
+            {% if portfolio.profile_photo_url or portfolio.user_profile_photo_url %}
+            <img src="{{ portfolio.profile_photo_url|default:portfolio.user_profile_photo_url }}" alt="Profile Photo" class="profile-photo">
+            {% endif %}
+            <h1>{{ header_component.content.title|default:portfolio.title }}</h1>
+            {% if header_component.content.subtitle %}
+            <p class="subtitle">{{ header_component.content.subtitle }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- About Section -->
+        {% if about_component and about_component.content.bio %}
+        <section class="section">
+            <h2 class="section-title">About Me</h2>
+            <div class="about-content">
+                {{ about_component.content.bio|linebreaks }}
+            </div>
+        </section>
+        {% endif %}
+        
+        <!-- Skills Section -->
+        {% if skills_component and skills_component.content.skills %}
+        <section class="section">
+            <h2 class="section-title">Skills</h2>
+            <div class="skills-container">
+                {% for skill in skills_component.content.skills %}
+                <span class="skill-tag">{{ skill.name|default:skill }}</span>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+        
+        <!-- Projects Section -->
+        {% if projects_component and projects_component.content.projects %}
+        <section class="section">
+            <h2 class="section-title">Projects</h2>
+            <div class="projects-grid">
+                {% for project in projects_component.content.projects %}
+                <div class="project-card">
+                    {% if project.image %}
+                    <img src="{{ project.image }}" alt="{{ project.title }}" class="project-image">
+                    {% endif %}
+                    <div class="project-content">
+                        <h3 class="project-title">{{ project.title }}</h3>
+                        <p class="project-description">{{ project.description|default:project.short_description|truncatewords:30 }}</p>
+                        {% if project.technologies %}
+                        <div class="project-technologies">
+                            {% for tech in project.technologies %}
+                            <span class="tech-tag">{{ tech }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="project-links">
+                            {% if project.github_url %}
+                            <a href="{{ project.github_url }}" class="project-link" target="_blank">GitHub</a>
+                            {% endif %}
+                            {% if project.live_url %}
+                            <a href="{{ project.live_url }}" class="project-link" target="_blank">Live Demo</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+        
+        <!-- Blog Section -->
+        {% if blog_component and blog_component.content.posts %}
+        <section class="section">
+            <h2 class="section-title">Blog Posts</h2>
+            <div class="blog-posts">
+                {% for post in blog_component.content.posts %}
+                <div class="blog-card">
+                    {% if post.featured_image %}
+                    <img src="{{ post.featured_image }}" alt="{{ post.title }}" class="blog-image">
+                    {% endif %}
+                    <div class="blog-content">
+                        <h3 class="blog-title">{{ post.title }}</h3>
+                        <p class="blog-excerpt">{{ post.excerpt|default:post.content_markdown|truncatewords:20 }}</p>
+                        {% if post.published_date %}
+                        <p class="blog-date">{{ post.published_date|date:"F d, Y" }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+        
+        <!-- Contact Section -->
+        {% if contact_component %}
+        <section class="section">
+            <h2 class="section-title">Contact</h2>
+            <div class="contact-info">
+                {% if contact_component.content.email %}
+                <div class="contact-item">
+                    <div class="contact-label">Email</div>
+                    <div class="contact-value">
+                        <a href="mailto:{{ contact_component.content.email }}">{{ contact_component.content.email }}</a>
+                    </div>
+                </div>
+                {% endif %}
+                {% if contact_component.content.phone %}
+                <div class="contact-item">
+                    <div class="contact-label">Phone</div>
+                    <div class="contact-value">{{ contact_component.content.phone }}</div>
+                </div>
+                {% endif %}
+                {% if contact_component.content.location %}
+                <div class="contact-item">
+                    <div class="contact-label">Location</div>
+                    <div class="contact-value">{{ contact_component.content.location }}</div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="social-links">
+                {% if contact_component.content.github %}
+                <a href="{{ contact_component.content.github }}" class="social-link" target="_blank">GitHub</a>
+                {% endif %}
+                {% if contact_component.content.linkedin %}
+                <a href="{{ contact_component.content.linkedin }}" class="social-link" target="_blank">LinkedIn</a>
+                {% endif %}
+                {% if contact_component.content.website %}
+                <a href="{{ contact_component.content.website }}" class="social-link" target="_blank">Website</a>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+    </div>
+    
+    <footer class="footer">
+        <p>&copy; {{ portfolio.title }} - Portfolio Export</p>
+        <p>Generated on {{ export_date|date:"F d, Y" }}</p>
+    </footer>
+</body>
+</html>
+

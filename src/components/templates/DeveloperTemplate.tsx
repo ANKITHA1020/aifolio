@@ -1,9 +1,15 @@
 import TemplateHeader from "@/components/portfolio/TemplateHeader";
-import TemplateAbout from "@/components/portfolio/TemplateAbout";
-import TemplateSkills from "@/components/portfolio/TemplateSkills";
-import TemplateProjects from "@/components/portfolio/TemplateProjects";
-import TemplateBlog from "@/components/portfolio/TemplateBlog";
-import TemplateContact from "@/components/portfolio/TemplateContact";
+import TemplateHeroBanner from "@/components/portfolio/TemplateHeroBanner";
+import TemplateAboutMeCard from "@/components/portfolio/TemplateAboutMeCard";
+import TemplateSkillsCloud from "@/components/portfolio/TemplateSkillsCloud";
+import TemplateExperienceTimeline from "@/components/portfolio/TemplateExperienceTimeline";
+import TemplateProjectGrid from "@/components/portfolio/TemplateProjectGrid";
+import TemplateServicesSection from "@/components/portfolio/TemplateServicesSection";
+import TemplateAchievementsCounters from "@/components/portfolio/TemplateAchievementsCounters";
+import TemplateTestimonialsCarousel from "@/components/portfolio/TemplateTestimonialsCarousel";
+import TemplateBlogPreviewGrid from "@/components/portfolio/TemplateBlogPreviewGrid";
+import TemplateContactForm from "@/components/portfolio/TemplateContactForm";
+import TemplateFooter from "@/components/portfolio/TemplateFooter";
 import CodeSnippet from "@/components/portfolio/CodeSnippet";
 import { getTemplateColors } from "@/utils/templateStyles";
 import { useEffect, useRef } from "react";
@@ -41,14 +47,23 @@ export default function DeveloperTemplate({ portfolio, templateConfig }: Develop
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   const headerComponent = sortedComponents.find((c) => c.component_type === "header");
-  const aboutComponent = sortedComponents.find((c) => c.component_type === "about");
-  const skillsComponent = sortedComponents.find((c) => c.component_type === "skills");
-  const projectsComponent = sortedComponents.find((c) => c.component_type === "projects");
-  const blogComponent = sortedComponents.find((c) => c.component_type === "blog");
-  const contactComponent = sortedComponents.find((c) => c.component_type === "contact");
+  const heroBannerComponent = sortedComponents.find((c) => c.component_type === "hero_banner");
+  const aboutMeCardComponent = sortedComponents.find((c) => c.component_type === "about_me_card");
+  const skillsCloudComponent = sortedComponents.find((c) => c.component_type === "skills_cloud");
+  const experienceTimelineComponent = sortedComponents.find((c) => c.component_type === "experience_timeline");
+  const projectGridComponent = sortedComponents.find((c) => c.component_type === "project_grid");
+  const servicesSectionComponent = sortedComponents.find((c) => c.component_type === "services_section");
+  const achievementsCountersComponent = sortedComponents.find((c) => c.component_type === "achievements_counters");
+  const testimonialsCarouselComponent = sortedComponents.find((c) => c.component_type === "testimonials_carousel");
+  const blogPreviewGridComponent = sortedComponents.find((c) => c.component_type === "blog_preview_grid");
+  const contactFormComponent = sortedComponents.find((c) => c.component_type === "contact_form");
+  const footerComponent = sortedComponents.find((c) => c.component_type === "footer");
 
-  const codeSnippets = Array.isArray(projectsComponent?.content.code_snippets) 
-    ? projectsComponent.content.code_snippets 
+  const codeSnippets = Array.isArray(projectGridComponent?.content?.code_snippets) 
+    ? projectGridComponent.content.code_snippets 
+    : [];
+  const projectGridProjects = Array.isArray(projectGridComponent?.content?.projects)
+    ? projectGridComponent.content.projects.filter((project: any) => project && project.image)
     : [];
 
   return (
@@ -64,26 +79,77 @@ export default function DeveloperTemplate({ portfolio, templateConfig }: Develop
         />
       )}
 
-      {aboutComponent && aboutComponent.content.bio && (
-        <TemplateAbout
-          bio={aboutComponent.content.bio}
+      {heroBannerComponent && (
+        <TemplateHeroBanner
+          title={heroBannerComponent.content.title || portfolio.title}
+          subtitle={heroBannerComponent.content.subtitle}
+          backgroundImage={heroBannerComponent.content.background_image}
+          backgroundVideo={heroBannerComponent.content.background_video}
+          ctaButtons={heroBannerComponent.content.cta_buttons}
+          overlayOpacity={heroBannerComponent.content.overlay_opacity}
           templateType="developer"
           config={templateConfig}
         />
       )}
 
-      {skillsComponent && skillsComponent.content.skills && (
-        <TemplateSkills
-          skills={skillsComponent.content.skills}
+      {aboutMeCardComponent && (
+        <TemplateAboutMeCard
+          name={aboutMeCardComponent.content.name}
+          title={aboutMeCardComponent.content.title}
+          bio={aboutMeCardComponent.content.bio}
+          image={aboutMeCardComponent.content.image}
+          socialLinks={aboutMeCardComponent.content.social_links}
           templateType="developer"
           config={templateConfig}
         />
       )}
 
-      {projectsComponent && (
-        <TemplateProjects
-          projects={projectsComponent.content.projects}
-          codeSnippets={codeSnippets}
+      {skillsCloudComponent && skillsCloudComponent.content.skills && (
+        <TemplateSkillsCloud
+          skills={skillsCloudComponent.content.skills}
+          displayMode={skillsCloudComponent.content.display_mode}
+          templateType="developer"
+          config={templateConfig}
+        />
+      )}
+
+      {experienceTimelineComponent && experienceTimelineComponent.content.experiences && (
+        <TemplateExperienceTimeline
+          experiences={experienceTimelineComponent.content.experiences}
+          templateType="developer"
+          config={templateConfig}
+        />
+      )}
+
+      {projectGridComponent && projectGridComponent.content.projects && (
+        <TemplateProjectGrid
+          projects={projectGridComponent.content.projects}
+          filterCategories={projectGridComponent.content.filter_categories}
+          showFilters={projectGridComponent.content.show_filters}
+          templateType="developer"
+          config={templateConfig}
+        />
+      )}
+
+      {servicesSectionComponent && servicesSectionComponent.content.services && (
+        <TemplateServicesSection
+          services={servicesSectionComponent.content.services}
+          templateType="developer"
+          config={templateConfig}
+        />
+      )}
+
+      {achievementsCountersComponent && achievementsCountersComponent.content.counters && (
+        <TemplateAchievementsCounters
+          counters={achievementsCountersComponent.content.counters}
+          templateType="developer"
+          config={templateConfig}
+        />
+      )}
+
+      {testimonialsCarouselComponent && testimonialsCarouselComponent.content.testimonials && (
+        <TemplateTestimonialsCarousel
+          testimonials={testimonialsCarouselComponent.content.testimonials}
           templateType="developer"
           config={templateConfig}
         />
@@ -109,22 +175,49 @@ export default function DeveloperTemplate({ portfolio, templateConfig }: Develop
         </section>
       )}
 
-      {blogComponent && (
-        <TemplateBlog
-          posts={blogComponent.content.posts}
+      {projectGridProjects.length > 0 && (
+        <section className="template-developer-section">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="template-section-title">Project Gallery</h2>
+            <div className="grid md:grid-cols-3 gap-4">
+              {projectGridProjects
+                .map((project: any) => project.image)
+                .filter((img: any) => img && typeof img === "string")
+                .map((img: string, idx: number) => (
+                  <img key={idx} src={img} alt="Project" className="w-full rounded-md border border-gray-700" />
+                ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {blogPreviewGridComponent && blogPreviewGridComponent.content.posts && (
+        <TemplateBlogPreviewGrid
+          posts={blogPreviewGridComponent.content.posts}
+          postsPerRow={blogPreviewGridComponent.content.posts_per_row}
           templateType="developer"
           config={templateConfig}
         />
       )}
 
-      {contactComponent && (
-        <TemplateContact
-          email={contactComponent.content.email}
-          phone={contactComponent.content.phone}
-          location={contactComponent.content.location}
-          linkedin={contactComponent.content.linkedin || contactComponent.content.social?.linkedin}
-          github={contactComponent.content.github || contactComponent.content.social?.github}
-          website={contactComponent.content.website || contactComponent.content.social?.website}
+      {contactFormComponent && (
+        <TemplateContactForm
+          title={contactFormComponent.content.title}
+          description={contactFormComponent.content.description}
+          fields={contactFormComponent.content.fields}
+          submitButtonText={contactFormComponent.content.submit_button_text}
+          contact_info={contactFormComponent.content.contact_info}
+          templateType="developer"
+          config={templateConfig}
+        />
+      )}
+
+      {footerComponent && (
+        <TemplateFooter
+          copyrightText={footerComponent.content.copyright_text}
+          links={footerComponent.content.links}
+          socialLinks={footerComponent.content.social_links}
+          columns={footerComponent.content.columns}
           templateType="developer"
           config={templateConfig}
         />

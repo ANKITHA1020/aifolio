@@ -33,23 +33,38 @@ export default function PortfolioNavigation({
   // Component type to display name mapping
   const componentNames: Record<string, string> = {
     header: "Home",
+    hero_banner: "Home",
     about: "About",
+    about_me_card: "About",
     skills: "Skills",
+    skills_cloud: "Skills",
+    experience_timeline: "Experience",
     projects: "Projects",
+    project_grid: "Projects",
+    services_section: "Services",
+    achievements_counters: "Achievements",
+    testimonials_carousel: "Testimonials",
     blog: "Blog",
+    blog_preview_grid: "Blog",
     contact: "Contact",
+    contact_form: "Contact",
+    footer: "Footer",
   };
 
   // Scroll to section
   const scrollToSection = (componentType: string) => {
     const element = document.getElementById(`section-${componentType}`);
     if (element) {
+      // Calculate total header height (top nav + section nav)
+      const topNav = document.querySelector('header')?.offsetHeight || 0;
       const navHeight = navRef.current?.offsetHeight || 0;
+      const totalHeaderHeight = topNav || (navHeight + 80); // Fallback if header not found
+      
       const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - navHeight - 20;
+      const offsetPosition = elementPosition + window.pageYOffset - totalHeaderHeight - 20;
 
       window.scrollTo({
-        top: offsetPosition,
+        top: Math.max(0, offsetPosition),
         behavior: "smooth",
       });
 
@@ -62,7 +77,9 @@ export default function PortfolioNavigation({
   useEffect(() => {
     const handleScroll = () => {
       const sections = visibleComponents.map((c) => c.component_type);
-      const scrollPosition = window.scrollY + 150;
+      // Account for unified header height
+      const topNav = document.querySelector('header')?.offsetHeight || 0;
+      const scrollPosition = window.scrollY + (topNav || 150);
 
       for (let i = sections.length - 1; i >= 0; i--) {
         const section = document.getElementById(`section-${sections[i]}`);
@@ -90,17 +107,18 @@ export default function PortfolioNavigation({
     <nav
       ref={navRef}
       className={cn(
-        "bg-background/95 backdrop-blur-sm border-b z-50 transition-all",
-        sticky && "sticky top-0",
+        "transition-all",
+        sticky && "sticky top-0 z-40 bg-background/98 backdrop-blur-xl border-b-2 border-border/60 shadow-sm",
+        !sticky && "border-b border-border/40",
         className
       )}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-12 sm:h-14">
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
             {visibleComponents.map((component) => {
-              const name = componentNames[component.component_type] || component.component_type;
+              const name = componentNames[component.component_type] || component.component_type.replace(/_/g, ' ');
               const isActive = activeSection === component.component_type;
 
               return (
@@ -110,8 +128,10 @@ export default function PortfolioNavigation({
                   size="sm"
                   onClick={() => scrollToSection(component.component_type)}
                   className={cn(
-                    "transition-colors",
-                    isActive && "bg-primary text-primary-foreground"
+                    "transition-all duration-200 font-medium",
+                    isActive 
+                      ? "bg-primary text-primary-foreground shadow-md" 
+                      : "hover:bg-muted/50"
                   )}
                 >
                   {name}
@@ -137,10 +157,10 @@ export default function PortfolioNavigation({
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t py-2">
-            <div className="flex flex-col gap-1">
+          <div className="md:hidden border-t-2 border-border/60 py-3 bg-muted/30">
+            <div className="flex flex-col gap-1.5">
               {visibleComponents.map((component) => {
-                const name = componentNames[component.component_type] || component.component_type;
+                const name = componentNames[component.component_type] || component.component_type.replace(/_/g, ' ');
                 const isActive = activeSection === component.component_type;
 
                 return (
@@ -150,8 +170,10 @@ export default function PortfolioNavigation({
                     size="sm"
                     onClick={() => scrollToSection(component.component_type)}
                     className={cn(
-                      "justify-start w-full",
-                      isActive && "bg-primary text-primary-foreground"
+                      "justify-start w-full transition-all duration-200 font-medium",
+                      isActive 
+                        ? "bg-primary text-primary-foreground shadow-md" 
+                        : "hover:bg-muted/50"
                     )}
                   >
                     {name}

@@ -89,16 +89,19 @@ export default function AIAssistant({ portfolioId, onSuggestionAction, className
   if (!portfolioId) return null;
 
   return (
-    <Card className={cn("p-4", className)}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold">AI Assistant</h3>
+    <Card className={cn("p-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border-2", className)}>
+      <div className="flex items-center justify-between mb-6 pb-4 border-b">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/20">
+            <Sparkles className="w-5 h-5 text-primary" />
+          </div>
+          <h3 className="font-semibold text-base">AI Assistant</h3>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setExpanded(!expanded)}
+          className="gap-2"
         >
           {expanded ? "Collapse" : "Expand"}
         </Button>

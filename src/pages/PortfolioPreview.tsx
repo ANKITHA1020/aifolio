@@ -25,6 +25,19 @@ import { portfolioApi, templateApi, projectApi, analyticsApi, blogApi } from "@/
 import TemplateRenderer from "@/components/templates/TemplateRenderer";
 import PortfolioNavigation from "@/components/portfolio/PortfolioNavigation";
 import { validateProjects, validateBlogPosts } from "@/utils/componentDataValidator";
+import { useInView } from "react-intersection-observer";
+import { motion, AnimatePresence } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const PortfolioPreview = () => {
   const { id } = useParams<{ id: string }>();
@@ -241,18 +254,42 @@ const PortfolioPreview = () => {
   const getViewportClass = () => {
     switch (viewMode) {
       case "mobile":
-        return "max-w-sm mx-auto";
+        return "max-w-sm mx-auto transition-all duration-300 shadow-lg";
       case "tablet":
-        return "max-w-2xl mx-auto";
+        return "max-w-2xl mx-auto transition-all duration-300 shadow-lg";
       default:
-        return "max-w-6xl mx-auto";
+        return "max-w-6xl mx-auto transition-all duration-300";
     }
   };
 
+  // Enhanced loading state with skeleton
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-background">
+        <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80">
+          <div className="container mx-auto px-6 py-4">
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </nav>
+        <div className="py-8 bg-muted/30">
+          <div className="max-w-6xl mx-auto">
+            <Card className="bg-white shadow-lg overflow-hidden">
+              <div className="space-y-8 p-8">
+                <Skeleton className="h-64 w-full" />
+                <div className="space-y-4">
+                  <Skeleton className="h-8 w-1/2" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-64 w-full" />
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -271,186 +308,266 @@ const PortfolioPreview = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate("/dashboard")} className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Button>
-          <div className="flex items-center gap-2">
-            {/* View Mode Selector */}
-            <div className="flex items-center gap-1 border rounded-lg p-1">
-              <Button
-                variant={viewMode === "mobile" ? "default" : "ghost"}
-                size="icon"
-                onClick={() => setViewMode("mobile")}
-              >
-                <Smartphone className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === "tablet" ? "default" : "ghost"}
-                size="icon"
-                onClick={() => setViewMode("tablet")}
-              >
-                <Tablet className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === "desktop" ? "default" : "ghost"}
-                size="icon"
-                onClick={() => setViewMode("desktop")}
-              >
-                <Monitor className="w-4 h-4" />
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative overflow-hidden bg-professional-image-3">
+      {/* Professional Background Overlay */}
+      <div className="bg-overlay-light"></div>
+      
+      {/* Unified Two-Tier Navigation Header */}
+      <header className="sticky top-0 z-50 bg-background/98 backdrop-blur-xl border-b-2 border-border/60 shadow-lg relative">
+        {/* Top Tier: Main Navigation */}
+        <nav className="border-b border-border/40">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              {/* Left: Back Button & Portfolio Title */}
+              <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate("/dashboard")} 
+                  className="gap-2 hover:bg-primary/10 transition-colors shrink-0 h-9"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Back</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate("/")} 
+                  className="gap-2 hover:bg-primary/10 transition-colors shrink-0 h-9"
+                >
+                  <span className="hidden sm:inline">Back to Home</span>
+                  <span className="sm:hidden">Home</span>
+                </Button>
+                <div className="hidden md:block h-6 w-px bg-border/60"></div>
+                {portfolio.title && (
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <h1 className="text-base sm:text-lg lg:text-xl font-bold truncate bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent">
+                      {portfolio.title}
+                    </h1>
+                    <Badge variant="secondary" className="hidden lg:inline-flex text-xs shrink-0">
+                      Preview
+                    </Badge>
+                  </div>
+                )}
+              </div>
 
-            {portfolio.is_published && (
-              <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={handleShare}>
-                  {linkCopied ? (
+              {/* Right: Controls */}
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                {/* View Mode Selector */}
+                <TooltipProvider>
+                  <div className="flex items-center gap-1 border-2 border-border/60 rounded-xl p-1 bg-background/90 backdrop-blur-sm shadow-sm ring-1 ring-border/30">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={viewMode === "mobile" ? "default" : "ghost"}
+                          size="icon"
+                          onClick={() => setViewMode("mobile")}
+                          className="h-7 w-7 transition-all"
+                        >
+                          <Smartphone className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Mobile View</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={viewMode === "tablet" ? "default" : "ghost"}
+                          size="icon"
+                          onClick={() => setViewMode("tablet")}
+                          className="h-7 w-7 transition-all"
+                        >
+                          <Tablet className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Tablet View</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={viewMode === "desktop" ? "default" : "ghost"}
+                          size="icon"
+                          onClick={() => setViewMode("desktop")}
+                          className="h-7 w-7 transition-all"
+                        >
+                          <Monitor className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Desktop View</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TooltipProvider>
+
+                {portfolio.is_published && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="shadow-sm hover:shadow-md transition-all hidden sm:flex">
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Share
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={handleShare}>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy Link
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => shareToSocial("facebook")}>
+                        <Facebook className="w-4 h-4 mr-2" />
+                        Facebook
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => shareToSocial("twitter")}>
+                        <Twitter className="w-4 h-4 mr-2" />
+                        Twitter
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => shareToSocial("linkedin")}>
+                        <Linkedin className="w-4 h-4 mr-2" />
+                        LinkedIn
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
+                <Button
+                  onClick={() => handlePublish(!portfolio.is_published)}
+                  disabled={publishing}
+                  variant={portfolio.is_published ? "default" : "outline"}
+                  size="sm"
+                  className="shadow-sm hover:shadow-md transition-all font-semibold"
+                >
+                  {publishing ? (
                     <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Copied!
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <span className="hidden sm:inline">{portfolio.is_published ? "Unpublishing..." : "Publishing..."}</span>
+                    </>
+                  ) : portfolio.is_published ? (
+                    <>
+                      <EyeOff className="w-4 h-4 mr-2" />
+                      <span className="hidden sm:inline">Unpublish</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy Link
+                      <Eye className="w-4 h-4 mr-2" />
+                      <span className="hidden sm:inline">Publish</span>
                     </>
                   )}
                 </Button>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => shareToSocial("facebook")}
-                    title="Share on Facebook"
-                  >
-                    <Facebook className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => shareToSocial("twitter")}
-                    title="Share on Twitter"
-                  >
-                    <Twitter className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => shareToSocial("linkedin")}
-                    title="Share on LinkedIn"
-                  >
-                    <Linkedin className="w-4 h-4" />
-                  </Button>
-                </div>
               </div>
-            )}
-
-            <Button
-              onClick={() => handlePublish(!portfolio.is_published)}
-              disabled={publishing}
-              variant={portfolio.is_published ? "default" : "outline"}
-            >
-              {publishing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {portfolio.is_published ? "Unpublishing..." : "Publishing..."}
-                </>
-              ) : portfolio.is_published ? (
-                <>
-                  <EyeOff className="w-4 h-4 mr-2" />
-                  Unpublish
-                </>
-              ) : (
-                <>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Publish
-                </>
-              )}
-            </Button>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      {/* Navigation */}
-      {portfolio && portfolio.components && portfolio.components.length > 0 && portfolio.navigation_enabled !== false && (
-        <PortfolioNavigation components={portfolio.components} />
-      )}
+        {/* Bottom Tier: Section Navigation */}
+        {portfolio && portfolio.components && portfolio.components.length > 0 && portfolio.navigation_enabled !== false && (
+          <div className="bg-background/95 backdrop-blur-sm">
+            <PortfolioNavigation components={portfolio.components} sticky={false} />
+          </div>
+        )}
+      </header>
 
       {/* Preview Container */}
-      <div className="py-8 bg-muted/30">
-        <div className={getViewportClass()}>
-          <Card className="bg-white shadow-lg overflow-hidden">
-            {/* Empty State */}
-            {(!portfolio.components || portfolio.components.length === 0 || 
-              portfolio.components.every(c => !c.content || Object.keys(c.content).length === 0)) ? (
-              <div className="min-h-[60vh] flex items-center justify-center p-12">
-                <div className="text-center max-w-md">
-                  <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
-                    <Eye className="w-12 h-12 text-muted-foreground" />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-2">Your Portfolio is Empty</h2>
-                  <p className="text-muted-foreground mb-6">
-                    Add components and content to build your portfolio. You can use AI assistance to generate content automatically.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button onClick={() => navigate(`/portfolio-builder?id=${portfolio.id}`)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Components
-                    </Button>
-                    <Button variant="outline" onClick={() => navigate(`/portfolio-builder?id=${portfolio.id}`)}>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Use AI to Generate Content
-                    </Button>
+      <div className="py-6 sm:py-8 lg:py-10 bg-gradient-to-b from-background via-background to-muted/40 min-h-screen">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className={getViewportClass()}>
+            <Card className="bg-white dark:bg-gray-900 shadow-2xl border-2 border-border/60 overflow-hidden transition-all duration-500 hover:shadow-3xl ring-1 ring-border/20 rounded-2xl">
+              {/* Empty State */}
+              {(!portfolio.components || portfolio.components.length === 0 || 
+                portfolio.components.every(c => !c.content || Object.keys(c.content).length === 0)) ? (
+                <div className="min-h-[60vh] flex items-center justify-center p-8 sm:p-12">
+                  <div className="text-center max-w-lg w-full">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-6 sm:mb-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shadow-lg">
+                      <Eye className="w-12 h-12 sm:w-16 sm:h-16 text-primary" />
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                      Your Portfolio is Empty
+                    </h2>
+                    <p className="text-muted-foreground mb-6 sm:mb-8 text-base sm:text-lg px-4">
+                      Add components and content to build your portfolio. You can use AI assistance to generate content automatically.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
+                      <Button 
+                        onClick={() => navigate(`/portfolio-builder?id=${portfolio.id}`)}
+                        size="lg"
+                        className="shadow-md hover:shadow-lg transition-shadow w-full sm:w-auto"
+                      >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Add Components
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate(`/portfolio-builder?id=${portfolio.id}`)}
+                        size="lg"
+                        className="shadow-md hover:shadow-lg transition-shadow w-full sm:w-auto"
+                      >
+                        <Sparkles className="w-5 h-5 mr-2" />
+                        Use AI to Generate Content
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <TemplateRenderer
-                portfolio={portfolio}
-                templateConfig={templateConfig}
-                onTrackClick={handleTrackClick}
-              />
-            )}
-          </Card>
+              ) : (
+                <div className="transition-all duration-500 ease-in-out">
+                  <div className="relative">
+                    {/* Decorative top border */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 z-10"></div>
+                    <TemplateRenderer
+                      portfolio={portfolio}
+                      templateConfig={templateConfig}
+                      onTrackClick={handleTrackClick}
+                    />
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
         </div>
       </div>
 
       {/* Info Bar */}
       {portfolio.is_published && (
-        <div className="border-t bg-background">
-          <div className="container mx-auto px-6 py-4">
-            <Card className="p-4 bg-primary/5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Portfolio is live</p>
-                  <p className="text-xs text-muted-foreground">
-                    {window.location.origin}/portfolio/{portfolio.slug}
-                  </p>
+        <div className="border-t-2 border-border/60 bg-gradient-to-b from-background via-muted/30 to-muted/40 mt-8">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+            <Card className="p-5 sm:p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/30 shadow-xl ring-1 ring-primary/10 rounded-xl">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="flex items-center gap-2.5">
+                    <div className="relative shrink-0">
+                      <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                      <div className="absolute inset-0 w-3 h-3 rounded-full bg-green-500 animate-ping opacity-75"></div>
+                    </div>
+                    <p className="text-sm font-bold text-foreground">Portfolio is live</p>
+                  </div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <p className="text-xs text-muted-foreground font-mono break-all bg-muted/50 px-2 py-1 rounded truncate">
+                      {window.location.origin}/portfolio/{portfolio.slug}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleShare}>
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0 w-full sm:w-auto justify-end sm:justify-start">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleShare}
+                    className="shadow-sm hover:shadow-md transition-shadow"
+                  >
                     {linkCopied ? (
                       <>
                         <Check className="w-4 h-4 mr-2" />
-                        Copied!
+                        <span className="hidden sm:inline">Copied!</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-4 h-4 mr-2" />
-                        Copy Link
+                        <span className="hidden sm:inline">Copy Link</span>
                       </>
                     )}
                   </Button>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 sm:gap-2 border-l pl-2 sm:pl-3">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => shareToSocial("facebook")}
                       title="Share on Facebook"
+                      className="shadow-sm hover:shadow-md transition-shadow h-8 w-8 p-0"
                     >
                       <Facebook className="w-4 h-4" />
                     </Button>
@@ -459,6 +576,7 @@ const PortfolioPreview = () => {
                       size="sm"
                       onClick={() => shareToSocial("twitter")}
                       title="Share on Twitter"
+                      className="shadow-sm hover:shadow-md transition-shadow h-8 w-8 p-0"
                     >
                       <Twitter className="w-4 h-4" />
                     </Button>
@@ -467,6 +585,7 @@ const PortfolioPreview = () => {
                       size="sm"
                       onClick={() => shareToSocial("linkedin")}
                       title="Share on LinkedIn"
+                      className="shadow-sm hover:shadow-md transition-shadow h-8 w-8 p-0"
                     >
                       <Linkedin className="w-4 h-4" />
                     </Button>

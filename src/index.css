@@ -64,3 +64,472 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Professional Background Patterns */
+@layer utilities {
+  .bg-mesh-gradient {
+    background: 
+      radial-gradient(at 0% 0%, hsl(263 70% 60% / 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsl(217 91% 60% / 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsl(330 81% 60% / 0.15) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsl(263 70% 50% / 0.15) 0px, transparent 50%);
+    background-size: 200% 200%;
+    animation: mesh-gradient 15s ease infinite;
+  }
+
+  @keyframes mesh-gradient {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  .bg-dot-pattern {
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+
+  .bg-hero-gradient {
+    background: 
+      linear-gradient(135deg, hsl(263 70% 50% / 0.2) 0%, hsl(217 91% 55% / 0.2) 50%, hsl(330 81% 55% / 0.2) 100%),
+      radial-gradient(circle at 20% 50%, hsl(263 70% 60% / 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, hsl(217 91% 60% / 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 20%, hsl(330 81% 60% / 0.1) 0%, transparent 50%);
+    background-size: 200% 200%, 100% 100%, 100% 100%, 100% 100%;
+    animation: hero-gradient 20s ease infinite;
+  }
+
+  @keyframes hero-gradient {
+    0%, 100% {
+      background-position: 0% 50%, center, center, center;
+    }
+    50% {
+      background-position: 100% 50%, center, center, center;
+    }
+  }
+
+  .bg-innovation-pattern {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-innovation-pattern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      linear-gradient(135deg, transparent 0%, hsl(263 70% 60% / 0.05) 25%, transparent 50%, hsl(217 91% 60% / 0.05) 75%, transparent 100%),
+      radial-gradient(circle at 30% 30%, hsl(263 70% 60% / 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 70% 70%, hsl(217 91% 60% / 0.08) 0%, transparent 50%);
+    background-size: 200% 200%, 100% 100%, 100% 100%;
+    animation: innovation-pattern 25s ease infinite;
+    pointer-events: none;
+  }
+
+  @keyframes innovation-pattern {
+    0%, 100% {
+      background-position: 0% 0%, center, center;
+      opacity: 1;
+    }
+    50% {
+      background-position: 100% 100%, center, center;
+      opacity: 0.8;
+    }
+  }
+
+  .bg-tech-grid {
+    background-image: 
+      linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: 0 0, 0 0;
+  }
+
+  .bg-geometric-shapes {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-geometric-shapes::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: 
+      radial-gradient(circle at 25% 25%, hsl(263 70% 60% / 0.06) 0%, transparent 25%),
+      radial-gradient(circle at 75% 75%, hsl(217 91% 60% / 0.06) 0%, transparent 25%),
+      radial-gradient(circle at 50% 50%, hsl(330 81% 60% / 0.04) 0%, transparent 30%);
+    animation: geometric-rotate 30s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes geometric-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Professional Background Images - CSS-based */
+  .bg-professional-image {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-professional-image::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -10;
+    background: 
+      /* Base gradient that looks like a professional photo */
+      linear-gradient(135deg, 
+        hsl(240 10% 8%) 0%,
+        hsl(240 10% 12%) 25%,
+        hsl(263 70% 15%) 50%,
+        hsl(217 91% 15%) 75%,
+        hsl(240 10% 10%) 100%
+      ),
+      /* Overlay gradients for depth */
+      radial-gradient(circle at 20% 30%, hsl(263 70% 60% / 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, hsl(217 91% 60% / 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, hsl(330 81% 60% / 0.1) 0%, transparent 60%),
+      /* Texture overlay */
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255, 255, 255, 0.01) 2px,
+        rgba(255, 255, 255, 0.01) 4px
+      );
+    background-size: 200% 200%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    background-position: 0% 0%, center, center, center, 0 0;
+    animation: professional-bg 30s ease infinite;
+    filter: blur(0.5px);
+  }
+
+  @keyframes professional-bg {
+    0%, 100% {
+      background-position: 0% 0%, center, center, center, 0 0;
+    }
+    50% {
+      background-position: 100% 100%, center, center, center, 0 0;
+    }
+  }
+
+  .bg-professional-image-2 {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-professional-image-2::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -10;
+    background: 
+      /* Abstract professional background */
+      linear-gradient(45deg,
+        hsl(240 10% 6%) 0%,
+        hsl(263 70% 12%) 20%,
+        hsl(240 10% 8%) 40%,
+        hsl(217 91% 12%) 60%,
+        hsl(240 10% 6%) 80%,
+        hsl(330 81% 10%) 100%
+      ),
+      /* Light rays effect */
+      conic-gradient(from 0deg at 50% 50%, 
+        transparent 0deg,
+        hsl(263 70% 60% / 0.08) 60deg,
+        transparent 120deg,
+        hsl(217 91% 60% / 0.08) 180deg,
+        transparent 240deg,
+        hsl(330 81% 60% / 0.08) 300deg,
+        transparent 360deg
+      ),
+      /* Noise texture */
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 1px,
+        rgba(255, 255, 255, 0.015) 1px,
+        rgba(255, 255, 255, 0.015) 2px
+      );
+    background-size: 200% 200%, 150% 150%, 20px 20px;
+    background-position: 0% 0%, center, 0 0;
+    animation: professional-bg-2 25s ease infinite;
+  }
+
+  @keyframes professional-bg-2 {
+    0%, 100% {
+      background-position: 0% 0%, center, 0 0;
+      transform: scale(1);
+    }
+    50% {
+      background-position: 100% 100%, center, 0 0;
+      transform: scale(1.05);
+    }
+  }
+
+  .bg-professional-image-3 {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-professional-image-3::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -10;
+    background: 
+      /* Dark professional theme */
+      radial-gradient(ellipse at top, hsl(263 70% 20% / 0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom, hsl(217 91% 20% / 0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at left, hsl(330 81% 20% / 0.2) 0%, transparent 50%),
+      radial-gradient(ellipse at right, hsl(263 70% 25% / 0.2) 0%, transparent 50%),
+      /* Base color */
+      linear-gradient(135deg, hsl(240 10% 5%) 0%, hsl(240 10% 8%) 100%),
+      /* Grid pattern */
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 60px 60px, 60px 60px;
+    background-position: center, center, center, center, center, 0 0, 0 0;
+    animation: professional-bg-3 20s ease infinite;
+  }
+
+  @keyframes professional-bg-3 {
+    0%, 100% {
+      background-position: center, center, center, center, center, 0 0, 0 0;
+      opacity: 1;
+    }
+    50% {
+      background-position: center, center, center, center, center, 30px 30px, 30px 30px;
+      opacity: 0.95;
+    }
+  }
+
+  /* Auth page background image (from public/) */
+  .bg-auth-image {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-auth-image::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -10;
+   /* Try both common filenames: prefer hyphenated name but fall back to the spaced filename
+     so the background works without needing to rename the file immediately. */
+  /* cache-busting query param so dev browser fetches the latest file instead of using a cached 304 */
+  background-image: url('/login-page.jpg?v=1'), url('/login page.jpg?v=1');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* Make the auth background fully visible and reduce blur for clarity */
+    opacity: 1;
+    filter: none;
+    pointer-events: none;
+  }
+
+  /* Overlay to ensure readability */
+  .bg-overlay-dark {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -9;
+    /* reduced opacity so background image is more visible */
+    background: linear-gradient(
+      to bottom,
+      hsl(240 10% 3.9% / 0.2) 0%,
+      hsl(240 10% 3.9% / 0.4) 100%
+    );
+    pointer-events: none;
+  }
+
+  .bg-overlay-light {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -9;
+    /* Lighter overlay for auth so background image shows through more */
+    background: linear-gradient(
+      to bottom,
+      hsl(240 10% 3.9% / 0.12) 0%,
+      hsl(240 10% 3.9% / 0.24) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Portfolio Minimalist Background */
+  .bg-portfolio-minimalist {
+    position: relative;
+    overflow: hidden;
+    background: #000000;
+  }
+
+  /* Site-wide animated background utility */
+  .bg-site-animated {
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-color: hsl(240 10% 6%);
+    color: var(--foreground);
+  }
+
+  .bg-site-animated::before {
+    /* animated multi-stop gradient */
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -30;
+    background: linear-gradient(120deg,
+      hsl(263 70% 12% / 0.6) 0%,
+      hsl(217 91% 12% / 0.55) 35%,
+      hsl(330 81% 12% / 0.5) 70%,
+      hsl(240 10% 6% / 0.6) 100%
+    );
+    background-size: 200% 200%;
+    animation: site-gradient 22s ease-in-out infinite;
+    filter: saturate(1.05) contrast(0.95);
+    pointer-events: none;
+  }
+
+  @keyframes site-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .bg-site-animated::after {
+    /* subtle moving dot pattern for texture */
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -25;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 36px 36px;
+    opacity: 0.06;
+    animation: site-dots 40s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes site-dots {
+    from { background-position: 0 0; }
+    to { background-position: 200px 200px; }
+  }
+
+  /* Image-based background */
+  .bg-portfolio-minimalist::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -10;
+    background-image: url('/landing-background.png.jpg?v=1');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* increased opacity to make the image more visible under the overlay */
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
+  /* CSS-based background (commented out - using image instead) */
+  /* .bg-portfolio-minimalist::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -10;
+    background: 
+      #000000,
+      linear-gradient(to right, transparent 0%, transparent 49%, rgba(255, 255, 255, 0.2) 49.5%, rgba(255, 255, 255, 0.2) 50.5%, transparent 51%, transparent 100%),
+      linear-gradient(to right, transparent 0%, transparent 59%, rgba(255, 255, 255, 0.15) 59.5%, rgba(255, 255, 255, 0.15) 60.5%, transparent 61%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, transparent 48%, rgba(255, 255, 255, 0.12) 48.5%, rgba(255, 255, 255, 0.12) 49.5%, transparent 50%, transparent 50.5%, rgba(255, 255, 255, 0.12) 51%, rgba(255, 255, 255, 0.12) 52%, transparent 52.5%, transparent 100%);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    background-position: center, center, center, center;
+    pointer-events: none;
+  } */
+
+  /* CSS-based text (commented out - using image instead) */
+  /* .bg-portfolio-minimalist::after {
+    content: 'portfolio';
+    position: fixed;
+    bottom: 8%;
+    left: 4%;
+    z-index: -9;
+    font-family: 'Inter', 'Arial', 'Helvetica', sans-serif;
+    font-size: clamp(10rem, 18vw, 24rem);
+    font-weight: 200;
+    color: rgba(255, 255, 255, 0.12);
+    letter-spacing: -0.03em;
+    line-height: 0.85;
+    text-transform: lowercase;
+    pointer-events: none;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+    font-style: normal;
+    opacity: 0.9;
+  } */
+
+  /* SEO page background image (from public/) */
+  .bg-seo-image {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-seo-image::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -10;
+    /* Try URL-encoded path first, then fallback to quoted original path */
+    background-image: url('/Seo%20page.jpg?v=1'), url('/Seo page.jpg?v=1');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.75;
+    filter: none;
+    pointer-events: none;
+  }
+}

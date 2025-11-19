@@ -17,6 +17,7 @@ import {
   MousePointerClick,
   Users,
   Clock,
+  RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { analyticsApi, portfolioApi } from "@/lib/api";
@@ -41,13 +42,67 @@ const Analytics = () => {
   const { toast } = useToast();
   const [portfolios, setPortfolios] = useState<any[]>([]);
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<number | null>(null);
+  const [loadingPortfolios, setLoadingPortfolios] = useState(true);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [views, setViews] = useState<any[]>([]);
   const [clicks, setClicks] = useState<any[]>([]);
   const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
+  const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
+  const [workingImageUrl, setWorkingImageUrl] = useState<string>('');
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+  // Get image URLs with multiple fallback paths and cache-busting
+  const getImageUrls = () => {
+    const cacheBuster = import.meta.env.DEV ? `?v=${Date.now()}` : '?v=1';
+    return [
+      encodeURI(`/Seo page.jpg`) + cacheBuster, // URL encoded (space -> %20)
+      `/Seo page.jpg${cacheBuster}`, // Original with space
+      `/Seo-page.jpg${cacheBuster}`, // Hyphenated fallback
+    ];
+  };
+
+  // Preload background image with multiple fallback attempts
+  useEffect(() => {
+    const imageUrls = getImageUrls();
+    let loadedUrl = '';
+    let attempts = 0;
+    const maxAttempts = imageUrls.length;
+
+    const tryLoadImage = (urlIndex: number) => {
+      if (urlIndex >= maxAttempts) {
+        console.warn('All SEO background image URLs failed to load:', imageUrls);
+        // Still set to true to show fallback
+        setBackgroundImageLoaded(true);
+        setWorkingImageUrl(imageUrls[0]); // Use first URL as fallback
+        return;
+      }
+
+      const img = new Image();
+      const currentUrl = imageUrls[urlIndex];
+      
+      console.log(`Attempting to load SEO background image (${urlIndex + 1}/${maxAttempts}):`, currentUrl);
+      
+      img.onload = () => {
+        console.log('SEO background image loaded successfully:', currentUrl);
+        loadedUrl = currentUrl;
+        setWorkingImageUrl(currentUrl);
+        setBackgroundImageLoaded(true);
+      };
+      
+      img.onerror = () => {
+        console.warn(`Failed to load SEO background image (attempt ${urlIndex + 1}):`, currentUrl);
+        attempts++;
+        // Try next URL
+        tryLoadImage(urlIndex + 1);
+      };
+      
+      img.src = currentUrl;
+    };
+
+    tryLoadImage(0);
+  }, []);
 
   useEffect(() => {
     loadPortfolios();
@@ -55,17 +110,22 @@ const Analytics = () => {
 
   const loadPortfolios = async () => {
     try {
+      setLoadingPortfolios(true);
       const data = await portfolioApi.getPortfolios();
-      setPortfolios(Array.isArray(data) ? data : []);
-      if (data.length > 0) {
-        setSelectedPortfolioId(data[0].id);
+      // Handle paginated responses
+      const portfoliosArray = Array.isArray(data) 
+        ? data 
+        : (data?.results || data?.data || []);
+      setPortfolios(portfoliosArray);
+      if (portfoliosArray.length > 0 && !selectedPortfolioId) {
+        setSelectedPortfolioId(portfoliosArray[0].id);
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to load portfolios",
-        variant: "destructive",
-      });
+      console.error('Error loading portfolios:', error);
+      setPortfolios([]);
+      // Don't show error toast - just handle gracefully
+    } finally {
+      setLoadingPortfolios(false);
     }
   };
 
@@ -135,9 +195,23 @@ const Analytics = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPortfolioId, dateRange]);
 
+  // Inline style fallback for background image
+  const backgroundStyle = backgroundImageLoaded && workingImageUrl ? {
+    backgroundImage: `url(${workingImageUrl})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'fixed',
+  } : {};
+
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80">
+    <div 
+      className="min-h-screen bg-background relative overflow-hidden bg-seo-image"
+      style={backgroundStyle}
+    >
+      {/* Professional Background Overlay */}
+      <div className="bg-overlay-dark"></div>
+      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80 relative z-50">
         <div className="container mx-auto px-6 py-4">
           <Button variant="ghost" onClick={() => navigate("/dashboard")} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -146,7 +220,7 @@ const Analytics = () => {
         </div>
       </nav>
 
-      <div className="container mx-auto px-6 py-12 max-w-7xl">
+      <div className="container mx-auto px-6 py-12 max-w-7xl relative z-10">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Analytics</h1>
           <p className="text-muted-foreground">Track your portfolio performance</p>
@@ -155,22 +229,68 @@ const Analytics = () => {
         <Card className="p-6 mb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Select Portfolio</label>
-              <Select
-                value={selectedPortfolioId?.toString() || ""}
-                onValueChange={(value) => setSelectedPortfolioId(parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a portfolio" />
-                </SelectTrigger>
-                <SelectContent>
-                  {portfolios.map((p) => (
-                    <SelectItem key={p.id} value={p.id.toString()}>
-                      {p.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2 mb-2">
+                <label className="text-sm font-medium">Select Portfolio</label>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={loadPortfolios}
+                  disabled={loadingPortfolios}
+                  title="Refresh portfolios"
+                >
+                  <RefreshCw className={`h-3 w-3 ${loadingPortfolios ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+              {loadingPortfolios ? (
+                <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted/50">
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Loading portfolios...</span>
+                </div>
+              ) : (
+                <Select
+                  value={selectedPortfolioId?.toString() || ""}
+                  onValueChange={(value) => {
+                    if (value !== "no-portfolios") {
+                      setSelectedPortfolioId(parseInt(value));
+                    }
+                  }}
+                  disabled={portfolios.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue 
+                      placeholder={
+                        portfolios.length === 0 
+                          ? "No portfolios available" 
+                          : "Choose a portfolio"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {portfolios.length === 0 ? (
+                      <SelectItem value="no-portfolios" disabled>
+                        No portfolios available. Create one in the Dashboard.
+                      </SelectItem>
+                    ) : (
+                      portfolios.map((p) => (
+                        <SelectItem key={p.id} value={p.id.toString()}>
+                          {p.title}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+              {portfolios.length === 0 && !loadingPortfolios && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  No portfolios found. <button 
+                    onClick={() => navigate("/dashboard")}
+                    className="text-primary hover:underline"
+                  >
+                    Create a portfolio
+                  </button> to get started.
+                </p>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium">Date Range</label>
@@ -313,11 +433,15 @@ const Analytics = () => {
               </Card>
             )}
           </div>
-        ) : (
+        ) : !loadingPortfolios ? (
           <Card className="p-12 text-center">
-            <p className="text-muted-foreground">Select a portfolio to view analytics</p>
+            <p className="text-muted-foreground">
+              {portfolios.length === 0 
+                ? "No portfolios available. Create one in the Dashboard to view analytics."
+                : "Select a portfolio to view analytics"}
+            </p>
           </Card>
-        )}
+        ) : null}
       </div>
     </div>
   );

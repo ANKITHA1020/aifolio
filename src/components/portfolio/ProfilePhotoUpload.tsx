@@ -106,8 +106,13 @@ export default function ProfilePhotoUpload({
   const displayPhoto = preview || currentPhotoUrl || userPhotoUrl;
 
   return (
-    <Card className={cn("p-6", className)}>
-      <Label className="text-lg font-semibold mb-4 block">Profile Photo</Label>
+    <Card className={cn("p-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border-2", className)}>
+      <div className="flex items-center gap-3 mb-6 pb-4 border-b">
+        <div className="p-2 rounded-lg bg-primary/20">
+          <User className="w-5 h-5 text-primary" />
+        </div>
+        <Label className="text-lg font-semibold">Profile Photo</Label>
+      </div>
       
       <div className="flex items-start gap-6">
         {/* Photo Preview */}

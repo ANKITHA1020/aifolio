@@ -98,11 +98,6 @@ export default function TemplateRenderer({ portfolio, templateConfig, onTrackCli
           return val !== null && val !== undefined;
         });
       
-      // Always show header component even if content is minimal (it should have title)
-      if (component.component_type === 'header') {
-        return true;
-      }
-      
       return hasContent;
     }),
   };

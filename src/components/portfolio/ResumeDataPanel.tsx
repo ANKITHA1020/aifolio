@@ -46,12 +46,14 @@ export default function ResumeDataPanel({
 
   if (!resumeData) {
     return (
-      <Card className={cn("p-4", className)}>
-        <div className="flex items-center gap-2 mb-2">
-          <FileText className="w-4 h-4 text-muted-foreground" />
-          <h3 className="font-semibold text-sm">Resume Data</h3>
+      <Card className={cn("p-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border-2", className)}>
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b">
+          <div className="p-2 rounded-lg bg-primary/20">
+            <FileText className="w-5 h-5 text-primary" />
+          </div>
+          <h3 className="font-semibold text-base">Resume Data</h3>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           No resume data available. Upload and parse a resume to enable resume-based component population.
         </p>
       </Card>
@@ -70,12 +72,14 @@ export default function ResumeDataPanel({
 
   if (!hasAnyFields) {
     return (
-      <Card className={cn("p-4", className)}>
-        <div className="flex items-center gap-2 mb-2">
-          <FileText className="w-4 h-4 text-muted-foreground" />
-          <h3 className="font-semibold text-sm">Resume Data</h3>
+      <Card className={cn("p-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border-2", className)}>
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b">
+          <div className="p-2 rounded-lg bg-primary/20">
+            <FileText className="w-5 h-5 text-primary" />
+          </div>
+          <h3 className="font-semibold text-base">Resume Data</h3>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Resume data is empty. Please parse your resume to extract data.
         </p>
       </Card>
@@ -141,16 +145,18 @@ export default function ResumeDataPanel({
   };
 
   return (
-    <Card className={cn("p-4", className)}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-muted-foreground" />
-          <h3 className="font-semibold text-sm">Resume Data</h3>
+    <Card className={cn("p-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border-2", className)}>
+      <div className="flex items-center justify-between mb-6 pb-4 border-b">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/20">
+            <FileText className="w-5 h-5 text-primary" />
+          </div>
+          <h3 className="font-semibold text-base">Resume Data</h3>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6"
+          className="h-8 w-8"
           onClick={() => setExpanded(!expanded)}
         >
           {expanded ? (

@@ -3,6 +3,8 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import ComponentErrorBoundary from "./ComponentErrorBoundary";
 import { getImageUrl } from "@/utils/imageUtils";
+import { motion } from "framer-motion";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 interface HeaderProps {
   title: string;
@@ -66,12 +68,22 @@ export default function TemplateHeader({
   return (
     <ComponentErrorBoundary componentName="Header">
       <header id="section-header" className={headerClass}>
-        <div className="max-w-4xl mx-auto">
-          {/* Profile Photo */}
-          {photoUrl && displayPhoto ? (
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <img
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-4xl mx-auto"
+        >
+          {/* Profile Photo with animation */}
+          {photoUrl && displayPhoto && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="flex justify-center mb-6"
+            >
+              <div className="relative group">
+                <motion.img
                   src={photoUrl}
                   alt="Profile"
                   className={cn(
@@ -83,35 +95,27 @@ export default function TemplateHeader({
                     templateType === "classic" && "border-blue-200",
                     templateType === "modern" && "border-purple-200"
                   )}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 300 }}
                   onError={handleImageError}
                   loading="lazy"
                 />
+                <div className="absolute inset-0 rounded-full bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
-            </div>
-          ) : !imageError && (profilePhotoUrl || userProfilePhotoUrl) ? (
-            <div className="flex justify-center mb-6">
-              <div className={cn(
-                "rounded-full border-4 shadow-lg flex items-center justify-center bg-muted",
-                photoSize,
-                templateType === "minimalist" && "border-gray-200",
-                templateType === "developer" && "border-green-200",
-                templateType === "designer" && "border-orange-200",
-                templateType === "classic" && "border-blue-200",
-                templateType === "modern" && "border-purple-200"
-              )}>
-                <User className={cn(
-                  "text-muted-foreground",
-                  templateType === "minimalist" ? "w-12 h-12 md:w-16 md:h-16" :
-                  templateType === "developer" ? "w-16 h-16 md:w-20 md:h-20" :
-                  "w-14 h-14 md:w-18 md:h-18"
-                )} />
-              </div>
-            </div>
-          ) : null}
+            </motion.div>
+          )}
 
-          {/* Title and Subtitle */}
-          <div className={cn("text-center", photoUrl && displayPhoto && "mt-4")}>
-            <h1
+          {/* Title and Subtitle with stagger */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className={cn("text-center", photoUrl && displayPhoto && "mt-4")}
+          >
+            <motion.h1
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
               className={cn(
                 "mb-4",
                 templateType === "minimalist"
@@ -122,9 +126,12 @@ export default function TemplateHeader({
               )}
             >
               {title}
-            </h1>
+            </motion.h1>
             {subtitle && typeof subtitle === "string" && subtitle.trim().length > 0 && (
-              <p
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.5 }}
                 className={cn(
                   templateType === "minimalist"
                     ? "text-xl font-light"
@@ -134,10 +141,10 @@ export default function TemplateHeader({
                 )}
               >
                 {subtitle}
-              </p>
+              </motion.p>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </header>
     </ComponentErrorBoundary>
   );

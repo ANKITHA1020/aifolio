@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { aiApi } from "@/lib/api";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const GenerateContent = () => {
   const navigate = useNavigate();
@@ -30,13 +29,6 @@ const GenerateContent = () => {
   const [generatingBio, setGeneratingBio] = useState(false);
   const [bioCopied, setBioCopied] = useState(false);
 
-  // State for Project Description
-  const [projectTitle, setProjectTitle] = useState("");
-  const [technologies, setTechnologies] = useState("");
-  const [projectSkills, setProjectSkills] = useState("");
-  const [generatedProjectDesc, setGeneratedProjectDesc] = useState("");
-  const [generatingProjectDesc, setGeneratingProjectDesc] = useState(false);
-  const [projectDescCopied, setProjectDescCopied] = useState(false);
 
   // State for Text Improvement
   const [inputText, setInputText] = useState("");
@@ -84,47 +76,7 @@ const GenerateContent = () => {
     }
   };
 
-  const handleGenerateProjectDescription = async () => {
-    if (!projectTitle.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a project title",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setGeneratingProjectDesc(true);
-      const techArray = technologies
-        .split(",")
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0);
-      const skillsArray = projectSkills
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      const response = await aiApi.generateProjectDescription({
-        title: projectTitle,
-        technologies: techArray.length > 0 ? techArray : undefined,
-        skills: skillsArray.length > 0 ? skillsArray : undefined,
-      });
-      setGeneratedProjectDesc(response.description);
-      toast({
-        title: "Success",
-        description: "Project description generated successfully",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to generate project description",
-        variant: "destructive",
-      });
-    } finally {
-      setGeneratingProjectDesc(false);
-    }
-  };
+ 
 
   const handleImproveText = async () => {
     if (!inputText.trim()) {
@@ -172,9 +124,12 @@ const GenerateContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden bg-professional-image-2">
+      {/* Professional Background Overlay */}
+      <div className="bg-overlay-dark"></div>
+      
       {/* Navigation */}
-      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80">
+      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80 relative z-50">
         <div className="container mx-auto px-6 py-4">
           <Button variant="ghost" onClick={() => navigate("/dashboard")} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -184,26 +139,22 @@ const GenerateContent = () => {
       </nav>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-12 max-w-6xl">
+      <div className="container mx-auto px-6 py-12 max-w-7xl relative z-10">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Sparkles className="w-8 h-8 text-primary" />
             <h1 className="text-4xl font-bold">Generate Content</h1>
           </div>
           <p className="text-muted-foreground">
-            Use AI to generate professional bios, project descriptions, and improve your text
+            Use AI to generate professional bios and improve your text
           </p>
         </div>
 
-        <Tabs defaultValue="bio" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="bio">Generate Bio</TabsTrigger>
-            <TabsTrigger value="project">Project Description</TabsTrigger>
-            <TabsTrigger value="improve">Improve Text</TabsTrigger>
-          </TabsList>
-
-          {/* Bio Generation Tab */}
-          <TabsContent value="bio" className="space-y-6">
+        {/* Two Column Grid Layout */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Left Column - Generate Bio and Improve Text Sections */}
+          <div className="space-y-6">
+            {/* Generate Bio Section */}
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <FileText className="w-5 h-5 text-primary" />
@@ -253,138 +204,9 @@ const GenerateContent = () => {
                   </Button>
                 </div>
               )}
-
-              {generatedBio && (
-                <div className="mt-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Generated Bio</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => copyToClipboard(generatedBio, setBioCopied)}
-                    >
-                      {bioCopied ? (
-                        <>
-                          <Check className="w-4 h-4 mr-2" />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copy
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  <Textarea
-                    value={generatedBio}
-                    onChange={(e) => setGeneratedBio(e.target.value)}
-                    rows={8}
-                    className="font-mono text-sm"
-                  />
-                </div>
-              )}
             </Card>
-          </TabsContent>
 
-          {/* Project Description Tab */}
-          <TabsContent value="project" className="space-y-6">
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-semibold">Generate Project Description</h2>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="project-title">Project Title *</Label>
-                  <Input
-                    id="project-title"
-                    value={projectTitle}
-                    onChange={(e) => setProjectTitle(e.target.value)}
-                    placeholder="e.g., E-commerce Platform"
-                    className="mt-2"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="technologies">Technologies (comma-separated)</Label>
-                  <Input
-                    id="technologies"
-                    value={technologies}
-                    onChange={(e) => setTechnologies(e.target.value)}
-                    placeholder="e.g., React, Node.js, PostgreSQL"
-                    className="mt-2"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="skills">Skills Demonstrated (comma-separated)</Label>
-                  <Input
-                    id="skills"
-                    value={projectSkills}
-                    onChange={(e) => setProjectSkills(e.target.value)}
-                    placeholder="e.g., Full-stack development, API design"
-                    className="mt-2"
-                  />
-                </div>
-
-                <Button
-                  onClick={handleGenerateProjectDescription}
-                  disabled={generatingProjectDesc || !projectTitle.trim()}
-                  className="w-full"
-                >
-                  {generatingProjectDesc ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="w-4 h-4 mr-2" />
-                      Generate Description
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {generatedProjectDesc && (
-                <div className="mt-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Generated Description</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        copyToClipboard(generatedProjectDesc, setProjectDescCopied)
-                      }
-                    >
-                      {projectDescCopied ? (
-                        <>
-                          <Check className="w-4 h-4 mr-2" />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copy
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  <Textarea
-                    value={generatedProjectDesc}
-                    onChange={(e) => setGeneratedProjectDesc(e.target.value)}
-                    rows={6}
-                    className="font-mono text-sm"
-                  />
-                </div>
-              )}
-            </Card>
-          </TabsContent>
-
-          {/* Text Improvement Tab */}
-          <TabsContent value="improve" className="space-y-6">
+            {/* Improve Text Section */}
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Type className="w-5 h-5 text-primary" />
@@ -507,8 +329,57 @@ const GenerateContent = () => {
                 </div>
               )}
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+
+          {/* Right Column - Generated Bio Display */}
+          <div className="space-y-6">
+            <Card className="p-6 h-full">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Generated Bio</h2>
+                </div>
+                {generatedBio && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(generatedBio, setBioCopied)}
+                  >
+                    {bioCopied ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+              
+              {generatedBio ? (
+                <Textarea
+                  value={generatedBio}
+                  onChange={(e) => setGeneratedBio(e.target.value)}
+                  rows={20}
+                  className="font-mono text-sm min-h-[500px]"
+                  placeholder="Generated bio will appear here..."
+                />
+              ) : (
+                <div className="flex items-center justify-center h-[500px] text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                  <div>
+                    <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                    <p className="text-lg font-medium mb-2">No bio generated yet</p>
+                    <p className="text-sm">Generate a bio using the form on the left</p>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

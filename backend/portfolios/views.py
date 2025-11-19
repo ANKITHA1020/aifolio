@@ -137,8 +137,14 @@ class PortfolioViewSet(viewsets.ModelViewSet):
                     status='completed'
                 ).select_related('extracted_data').order_by('-uploaded_at').first()
                 
-                if latest_resume and hasattr(latest_resume, 'extracted_data') and latest_resume.extracted_data:
-                    resume_data = latest_resume.extracted_data.structured_data
+                if latest_resume:
+                    try:
+                        resume_data_obj = latest_resume.extracted_data
+                        if resume_data_obj and resume_data_obj.structured_data:
+                            resume_data = resume_data_obj.structured_data
+                    except AttributeError:
+                        # extracted_data relationship doesn't exist
+                        pass
             except Exception as e:
                 print(f"Error fetching resume data: {e}")
                 pass
@@ -248,22 +254,27 @@ class PortfolioViewSet(viewsets.ModelViewSet):
                 status='completed'
             ).select_related('extracted_data').order_by('-uploaded_at').first()
             
-            if latest_resume and hasattr(latest_resume, 'extracted_data'):
-                resume_data_obj = latest_resume.extracted_data
-                return Response({
-                    'resume_id': latest_resume.id,
-                    'structured_data': resume_data_obj.structured_data if resume_data_obj else {},
-                    'has_resume': True
-                })
-            else:
-                return Response({
-                    'has_resume': False,
-                    'structured_data': {},
-                    'message': 'No parsed resume found. Please upload and parse a resume first.'
-                })
+            if latest_resume:
+                try:
+                    resume_data_obj = latest_resume.extracted_data
+                    if resume_data_obj and resume_data_obj.structured_data:
+                        return Response({
+                            'resume_id': latest_resume.id,
+                            'structured_data': resume_data_obj.structured_data,
+                            'has_resume': True
+                        })
+                except AttributeError:
+                    # extracted_data relationship doesn't exist
+                    pass
+            
+            return Response({
+                'has_resume': False,
+                'structured_data': {},
+                'message': 'No parsed resume found. Please upload and parse a resume first.'
+            })
         except Exception as e:
             return Response(
-                {'error': str(e), 'has_resume': False},
+                {'error': str(e), 'has_resume': False, 'structured_data': {}},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

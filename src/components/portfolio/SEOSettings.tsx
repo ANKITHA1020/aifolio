@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Sparkles, Loader2, CheckCircle2 } from "lucide-react";
+import { Sparkles, Loader2, CheckCircle2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { portfolioApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -120,9 +120,14 @@ export default function SEOSettings({
   const keywordsCount = keywords.split(",").filter((k) => k.trim()).length;
 
   return (
-    <Card className={cn("p-6 space-y-6", className)}>
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">SEO Settings</h3>
+    <Card className={cn("p-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border-2 space-y-6", className)}>
+      <div className="flex items-center justify-between pb-4 border-b">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/20">
+            <Search className="w-5 h-5 text-primary" />
+          </div>
+          <h3 className="text-lg font-semibold">SEO Settings</h3>
+        </div>
         <Button
           variant="outline"
           size="sm"

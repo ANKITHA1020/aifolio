@@ -16,6 +16,7 @@ class ExportJob(models.Model):
     
     EXPORT_TYPE_CHOICES = [
         ('html', 'HTML/CSS/JS'),
+        ('pdf', 'PDF Document'),
         ('zip', 'ZIP Package'),
         ('github', 'GitHub Pages'),
     ]

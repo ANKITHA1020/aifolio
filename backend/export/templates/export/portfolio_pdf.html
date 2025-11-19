@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ portfolio.title }} - Portfolio</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            font-size: 12pt;
+        }
+        
+        /* Header Styles */
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-bottom: 30px;
+            page-break-after: avoid;
+        }
+        
+        .header h1 {
+            font-size: 28pt;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            font-size: 16pt;
+            opacity: 0.9;
+        }
+        
+        .profile-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 15px auto;
+            display: block;
+            border: 4px solid white;
+        }
+        
+        /* Section Styles */
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        
+        .section-title {
+            font-size: 20pt;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #667eea;
+            color: #333;
+            page-break-after: avoid;
+        }
+        
+        /* About Section */
+        .about-content {
+            font-size: 11pt;
+            line-height: 1.7;
+            color: #555;
+            text-align: justify;
+        }
+        
+        /* Skills Section */
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .skill-tag {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 9pt;
+            display: inline-block;
+        }
+        
+        /* Projects Section */
+        .project-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            page-break-inside: avoid;
+        }
+        
+        .project-title {
+            font-size: 14pt;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .project-description {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 10pt;
+        }
+        
+        .project-technologies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+        
+        .tech-tag {
+            background: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 8pt;
+            color: #666;
+        }
+        
+        .project-links {
+            font-size: 9pt;
+            color: #667eea;
+        }
+        
+        /* Blog Section */
+        .blog-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            page-break-inside: avoid;
+        }
+        
+        .blog-title {
+            font-size: 12pt;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .blog-excerpt {
+            color: #666;
+            font-size: 9pt;
+            margin-bottom: 5px;
+        }
+        
+        .blog-date {
+            color: #999;
+            font-size: 8pt;
+        }
+        
+        /* Contact Section */
+        .contact-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .contact-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .contact-label {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+            font-size: 9pt;
+        }
+        
+        .contact-value {
+            color: #333;
+            font-size: 10pt;
+        }
+        
+        .social-links {
+            margin-top: 15px;
+            font-size: 9pt;
+        }
+        
+        .social-link {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 30px;
+            border-top: 1px solid #e0e0e0;
+            color: #666;
+            font-size: 8pt;
+            page-break-before: avoid;
+        }
+        
+        /* Print optimizations */
+        @media print {
+            .section {
+                page-break-inside: avoid;
+            }
+            
+            .project-item,
+            .blog-item {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    {% if header_component %}
+    <div class="header">
+        {% if portfolio.profile_photo_url or portfolio.user_profile_photo_url %}
+        <img src="{{ portfolio.profile_photo_url|default:portfolio.user_profile_photo_url }}" alt="Profile Photo" class="profile-photo">
+        {% endif %}
+        <h1>{{ header_component.content.title|default:portfolio.title }}</h1>
+        {% if header_component.content.subtitle %}
+        <p class="subtitle">{{ header_component.content.subtitle }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- About Section -->
+    {% if about_component and about_component.content.bio %}
+    <section class="section">
+        <h2 class="section-title">About Me</h2>
+        <div class="about-content">
+            {{ about_component.content.bio|linebreaks }}
+        </div>
+    </section>
+    {% endif %}
+    
+    <!-- Skills Section -->
+    {% if skills_component and skills_component.content.skills %}
+    <section class="section">
+        <h2 class="section-title">Skills</h2>
+        <div class="skills-container">
+            {% for skill in skills_component.content.skills %}
+            <span class="skill-tag">{{ skill.name|default:skill }}</span>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+    
+    <!-- Projects Section -->
+    {% if projects_component and projects_component.content.projects %}
+    <section class="section">
+        <h2 class="section-title">Projects</h2>
+        {% for project in projects_component.content.projects %}
+        <div class="project-item">
+            <h3 class="project-title">{{ project.title }}</h3>
+            <p class="project-description">{{ project.description|default:project.short_description }}</p>
+            {% if project.technologies %}
+            <div class="project-technologies">
+                {% for tech in project.technologies %}
+                <span class="tech-tag">{{ tech }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="project-links">
+                {% if project.github_url %}
+                GitHub: {{ project.github_url }}
+                {% endif %}
+                {% if project.live_url %}
+                | Live: {{ project.live_url }}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+    
+    <!-- Blog Section -->
+    {% if blog_component and blog_component.content.posts %}
+    <section class="section">
+        <h2 class="section-title">Blog Posts</h2>
+        {% for post in blog_component.content.posts %}
+        <div class="blog-item">
+            <h3 class="blog-title">{{ post.title }}</h3>
+            <p class="blog-excerpt">{{ post.excerpt|default:post.content_markdown|truncatewords:30 }}</p>
+            {% if post.published_date %}
+            <p class="blog-date">{{ post.published_date|date:"F d, Y" }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+    
+    <!-- Contact Section -->
+    {% if contact_component %}
+    <section class="section">
+        <h2 class="section-title">Contact</h2>
+        <div class="contact-info">
+            {% if contact_component.content.email %}
+            <div class="contact-item">
+                <div class="contact-label">Email</div>
+                <div class="contact-value">{{ contact_component.content.email }}</div>
+            </div>
+            {% endif %}
+            {% if contact_component.content.phone %}
+            <div class="contact-item">
+                <div class="contact-label">Phone</div>
+                <div class="contact-value">{{ contact_component.content.phone }}</div>
+            </div>
+            {% endif %}
+            {% if contact_component.content.location %}
+            <div class="contact-item">
+                <div class="contact-label">Location</div>
+                <div class="contact-value">{{ contact_component.content.location }}</div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="social-links">
+            {% if contact_component.content.github %}
+            <a href="{{ contact_component.content.github }}" class="social-link">GitHub</a>
+            {% endif %}
+            {% if contact_component.content.linkedin %}
+            <a href="{{ contact_component.content.linkedin }}" class="social-link">LinkedIn</a>
+            {% endif %}
+            {% if contact_component.content.website %}
+            <a href="{{ contact_component.content.website }}" class="social-link">Website</a>
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+    
+    <footer class="footer">
+        <p>&copy; {{ portfolio.title }} - Portfolio Export | Generated on {{ export_date|date:"F d, Y" }}</p>
+    </footer>
+</body>
+</html>
+

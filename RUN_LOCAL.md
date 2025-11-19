@@ -44,6 +44,63 @@ pip install -r requirements.txt
 
 **Note:** If you encounter installation errors with Pillow on Python 3.13, the requirements.txt already uses `Pillow>=10.0.0` which should automatically install a compatible version (12.0.0+).
 
+### 3.5. Install WeasyPrint (for PDF Export) - Optional
+
+WeasyPrint is required for PDF export functionality. HTML export works without it.
+
+**Option 1: Use Installation Scripts (Recommended)**
+
+**Windows:**
+```powershell
+.\install_weasyprint_windows.ps1
+```
+
+**Linux/macOS:**
+```bash
+chmod +x install_weasyprint.sh
+./install_weasyprint.sh
+```
+
+**Option 2: Manual Installation**
+
+**Windows:**
+1. Install WeasyPrint with Windows extras:
+   ```bash
+   pip install weasyprint[windows]
+   ```
+2. If you encounter issues, install GTK3 runtime:
+   - Download from: https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer
+   - After installation, restart your computer
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt-get install python3-cffi python3-brotli libpango-1.0-0 libpangoft2-1.0-0
+pip install weasyprint
+```
+
+**Linux (RedHat/CentOS/Fedora):**
+```bash
+sudo yum install pango pango-devel cairo cairo-devel
+# or for Fedora:
+sudo dnf install pango pango-devel cairo cairo-devel
+pip install weasyprint
+```
+
+**macOS:**
+```bash
+brew install cairo pango gdk-pixbuf libffi
+pip install weasyprint
+```
+
+**Verify Installation:**
+```bash
+python manage.py check_weasyprint
+```
+
+This command will verify if WeasyPrint is installed and can generate PDFs. If installation fails, it will provide platform-specific instructions.
+
+**Note:** After installing WeasyPrint, restart your Django server for the changes to take effect.
+
 ### 4. Set Up Environment Variables
 
 Create a `.env` file in the `backend/` directory:
@@ -391,6 +448,22 @@ pip install -r requirements.txt
 1. Verify the server is running from the `backend/` directory
 2. Check that migrations have been run: `python manage.py migrate`
 3. Ensure `accounts` app is in `INSTALLED_APPS` in `settings.py`
+
+**WeasyPrint/PDF Export Issues:**
+1. Check WeasyPrint installation:
+   ```bash
+   python manage.py check_weasyprint
+   ```
+2. If WeasyPrint is not installed:
+   - **Windows:** Run `.\install_weasyprint_windows.ps1` or install manually (see section 3.5)
+   - **Linux:** Run `./install_weasyprint.sh` or install system dependencies manually
+   - **macOS:** Run `./install_weasyprint.sh` or install via Homebrew
+3. After installation, restart the Django server
+4. Note: HTML export works without WeasyPrint. PDF export requires WeasyPrint and system dependencies.
+5. Common issues:
+   - **Windows:** Missing GTK3 runtime - install from https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer
+   - **Linux:** Missing system packages - install cairo, pango, and their development packages
+   - **macOS:** Missing Homebrew packages - install cairo, pango, gdk-pixbuf, libffi
 
 ### Frontend Issues
 

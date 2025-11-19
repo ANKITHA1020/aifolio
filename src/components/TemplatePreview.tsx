@@ -176,24 +176,34 @@ export default function TemplatePreview({
         {/* Preview Content */}
         <div
           ref={previewContainerRef}
-          className="flex-1 overflow-auto bg-muted/30 p-6"
+          className="flex-1 overflow-y-auto overflow-x-hidden bg-muted/30 p-6 min-h-0"
           tabIndex={-1}
           role="region"
           aria-label="Template preview content"
+          style={{ maxHeight: 'calc(95vh - 200px)' }}
         >
           <div className={cn(getViewportClass(), "transition-all duration-300")}>
             <Card
               className={cn(
-                "bg-white shadow-lg overflow-hidden",
+                "bg-white shadow-lg w-full",
                 getPreviewScale(),
                 "origin-top"
               )}
             >
-              {examplePortfolio && (
-                <TemplateRenderer
-                  portfolio={examplePortfolio}
-                  templateConfig={template.config}
-                />
+              {examplePortfolio ? (
+                <div className="w-full">
+                  <TemplateRenderer
+                    portfolio={examplePortfolio}
+                    templateConfig={template.config}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-96 text-muted-foreground">
+                  <div className="text-center">
+                    <p className="text-lg mb-2">Loading preview...</p>
+                    <p className="text-sm">Preparing full template with demo content</p>
+                  </div>
+                </div>
               )}
             </Card>
           </div>

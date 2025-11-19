@@ -132,6 +132,31 @@ class ApiClient {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         
+        // Create a custom error that preserves the full error response
+        const errorMessage = errorData.error || errorData.detail || response.statusText;
+        const apiError = new Error(errorMessage) as any;
+        
+        // Attach the full error response data to the error object
+        apiError.response = {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData
+        };
+        
+        // Preserve all error response fields (error_type, instructions, job_id, status, etc.)
+        if (errorData.error_type) {
+          apiError.error_type = errorData.error_type;
+        }
+        if (errorData.instructions) {
+          apiError.instructions = errorData.instructions;
+        }
+        if (errorData.job_id) {
+          apiError.job_id = errorData.job_id;
+        }
+        if (errorData.status) {
+          apiError.status = errorData.status;
+        }
+        
         // Handle Django REST Framework validation errors
         // DRF returns errors as: {field_name: [error messages]} or {field_name: "error message"}
         // or {non_field_errors: [error messages]} for general errors
@@ -139,7 +164,9 @@ class ApiClient {
         
         // Check if this looks like a DRF validation error (has field names as keys)
         const isDRFValidationError = Object.keys(errorData).some(key => 
-          key !== 'error' && key !== 'detail' && (Array.isArray(errorData[key]) || typeof errorData[key] === 'string')
+          key !== 'error' && key !== 'detail' && key !== 'error_type' && key !== 'instructions' && 
+          key !== 'job_id' && key !== 'status' &&
+          (Array.isArray(errorData[key]) || typeof errorData[key] === 'string')
         );
         
         if (isDRFValidationError) {
@@ -148,7 +175,9 @@ class ApiClient {
             if (field === 'non_field_errors') {
               const nonFieldErrors = Array.isArray(errorData[field]) ? errorData[field] : [errorData[field]];
               errorMessages.push(nonFieldErrors[0]);
-            } else if (field !== 'error' && field !== 'detail') {
+            } else if (field !== 'error' && field !== 'detail' && 
+                       field !== 'error_type' && field !== 'instructions' && 
+                       field !== 'job_id' && field !== 'status') {
               const fieldErrors = Array.isArray(errorData[field]) ? errorData[field] : [errorData[field]];
               const fieldLabel = field.split('_').map(word => 
                 word.charAt(0).toUpperCase() + word.slice(1)
@@ -157,14 +186,13 @@ class ApiClient {
             }
           });
           
-          // If we have field errors, throw with combined message
+          // If we have field errors, update the error message but keep the response data
           if (errorMessages.length > 0) {
-            throw new Error(errorMessages.join('. '));
+            apiError.message = errorMessages.join('. ');
           }
         }
         
-        // Handle other error formats
-        throw new Error(errorData.error || errorData.detail || response.statusText);
+        throw apiError;
       }
 
       // Handle empty responses
@@ -701,6 +729,32 @@ export const portfolioApi = {
       keywords_string: string;
     }>(`/portfolios/portfolios/${portfolioId}/generate_keywords/`);
   },
+
+  getPublicPortfolio: async (slug: string) => {
+    return api.get<{
+      id: number;
+      title: string;
+      slug: string;
+      template: number | null;
+      template_type: string;
+      is_published: boolean;
+      custom_settings: Record<string, any>;
+      components: Array<{
+        id: number;
+        component_type: string;
+        order: number;
+        is_visible: boolean;
+        content: Record<string, any>;
+      }>;
+      seo_title?: string;
+      seo_description?: string;
+      seo_keywords?: string;
+      meta_keywords?: string;
+      meta_description?: string;
+      created_at: string;
+      updated_at: string;
+    }>(`/portfolios/portfolios/public/${slug}/`, { requiresAuth: false });
+  },
 };
 
 // Template API methods
@@ -1094,8 +1148,15 @@ export const exportApi = {
     return api.get<{
       id: number;
       status: string;
+      export_type?: string;
       file_path: string | null;
       error_message: string | null;
+      error_type?: string;
+      instructions?: {
+        title?: string;
+        instructions?: string[];
+        docs_url?: string;
+      };
       created_at: string;
       completed_at: string | null;
     }>(`/export/jobs/${jobId}/`);

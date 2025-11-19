@@ -18,6 +18,7 @@ export interface ResumeData {
     end_date?: string;
     description?: string;
     responsibilities?: string[];
+    location?: string;
   }>;
   education?: Array<{
     degree?: string;
@@ -55,6 +56,65 @@ export interface FieldMapping {
 export interface MappingPreview {
   [key: string]: any;
 }
+
+const normalizeResumeSkills = (skills: ResumeData['skills']): string[] => {
+  if (!skills) return [];
+
+  if (Array.isArray(skills)) {
+    return skills
+      .map((skill) => (typeof skill === 'string' ? skill.trim() : String(skill || '').trim()))
+      .filter((skill) => skill.length > 0);
+  }
+
+  if (typeof skills === 'string') {
+    return skills
+      .split(',')
+      .map((skill) => skill.trim())
+      .filter((skill) => skill.length > 0);
+  }
+
+  return [];
+};
+
+const convertExperienceToTimeline = (
+  experience: ResumeData['experience']
+): Array<{
+  title: string;
+  company: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  location: string;
+}> => {
+  if (!experience || !Array.isArray(experience)) {
+    return [];
+  }
+
+  return experience
+    .map((exp) => {
+      const title = exp?.title || exp?.position || '';
+      const company = exp?.company || '';
+      const startDate = exp?.start_date || '';
+      const endDate = exp?.end_date || '';
+      const description =
+        exp?.description ||
+        (Array.isArray(exp?.responsibilities) ? exp.responsibilities.join('\n') : '');
+      const location = exp?.location || '';
+
+      return {
+        title,
+        company,
+        startDate,
+        endDate,
+        description,
+        location,
+      };
+    })
+    .filter(
+      (item) =>
+        item.title || item.company || item.description || item.startDate || item.endDate
+    );
+};
 
 /**
  * Get available resume fields organized by category
@@ -189,74 +249,28 @@ export function previewFieldMapping(
 
   const preview: MappingPreview = {};
 
-  switch (componentType) {
-    case 'header':
-      if (selectedFields.name !== false && resumeData.name) {
-        preview.title = resumeData.name;
-      }
-      if (selectedFields.title !== false) {
-        const title = resumeData.title || 
-          (resumeData.experience?.[0]?.title || resumeData.experience?.[0]?.position) || 
-          '';
-        if (title) {
-          preview.subtitle = title;
-        }
-      }
-      break;
+  const mappings = getDefaultFieldMappings(componentType, resumeData);
 
-    case 'about':
-      if (selectedFields.summary !== false && resumeData.summary) {
-        preview.bio = resumeData.summary;
+  const assignValue = (target: MappingPreview, mapping: FieldMapping) => {
+    const path = mapping.componentField.split('.');
+    let cursor: any = target;
+    for (let i = 0; i < path.length - 1; i++) {
+      const key = path[i];
+      if (!cursor[key] || typeof cursor[key] !== 'object' || Array.isArray(cursor[key])) {
+        cursor[key] = {};
       }
-      break;
+      cursor = cursor[key];
+    }
+    const finalKey = path[path.length - 1];
+    if (finalKey) {
+      cursor[finalKey] = mapping.value;
+    }
+  };
 
-    case 'skills':
-      if (selectedFields.skills !== false && resumeData.skills) {
-        const skillsArray = Array.isArray(resumeData.skills)
-          ? resumeData.skills
-          : typeof resumeData.skills === 'string'
-          ? resumeData.skills.split(',').map(s => s.trim())
-          : [];
-        if (skillsArray.length > 0) {
-          preview.skills = skillsArray;
-        }
-      }
-      break;
-
-    case 'contact':
-      if (selectedFields.email !== false && resumeData.email) {
-        preview.email = resumeData.email;
-      }
-      if (selectedFields.phone !== false && resumeData.phone) {
-        preview.phone = resumeData.phone;
-      }
-      if (selectedFields.location !== false && (resumeData.location || resumeData.address)) {
-        preview.location = resumeData.location || resumeData.address;
-      }
-      
-      const social: Record<string, string> = {};
-      const linkedin = resumeData.linkedin || resumeData.linkedin_url || resumeData.social?.linkedin;
-      const github = resumeData.github || resumeData.github_url || resumeData.social?.github;
-      const website = resumeData.website || resumeData.portfolio_url || resumeData.social?.website || resumeData.social?.portfolio;
-
-      if (selectedFields.linkedin !== false && linkedin) {
-        social.linkedin = linkedin;
-      }
-      if (selectedFields.github !== false && github) {
-        social.github = github;
-      }
-      if (selectedFields.website !== false && website) {
-        social.website = website;
-      }
-
-      if (Object.keys(social).length > 0) {
-        preview.social = social;
-      }
-      break;
-
-    case 'projects':
-      // Projects are handled separately
-      break;
+  for (const mapping of mappings) {
+    const includeField = selectedFields[mapping.resumeField] !== false;
+    if (!includeField) continue;
+    assignValue(preview, mapping);
   }
 
   return preview;
@@ -276,7 +290,7 @@ export function getDefaultFieldMappings(
   const mappings: FieldMapping[] = [];
 
   switch (componentType) {
-    case 'header':
+    case 'hero_banner': {
       if (resumeData.name) {
         mappings.push({
           resumeField: 'name',
@@ -285,20 +299,48 @@ export function getDefaultFieldMappings(
           enabled: true,
         });
       }
-      const title = resumeData.title || 
-        (resumeData.experience?.[0]?.title || resumeData.experience?.[0]?.position) || 
+      const headline =
+        resumeData.title ||
+        resumeData.summary ||
+        resumeData.experience?.[0]?.title ||
+        resumeData.experience?.[0]?.position ||
         '';
-      if (title) {
+      if (headline) {
         mappings.push({
           resumeField: 'title',
           componentField: 'subtitle',
-          value: title,
+          value: headline,
           enabled: true,
         });
       }
+      if (resumeData.summary) {
+        mappings.push({
+          resumeField: 'summary',
+          componentField: 'subtitle',
+          value: resumeData.summary,
+          enabled: false,
+        });
+      }
       break;
+    }
 
-    case 'about':
+    case 'about_me_card': {
+      if (resumeData.name) {
+        mappings.push({
+          resumeField: 'name',
+          componentField: 'name',
+          value: resumeData.name,
+          enabled: true,
+        });
+      }
+      if (resumeData.title) {
+        mappings.push({
+          resumeField: 'title',
+          componentField: 'title',
+          value: resumeData.title,
+          enabled: true,
+        });
+      }
       if (resumeData.summary) {
         mappings.push({
           resumeField: 'summary',
@@ -307,60 +349,26 @@ export function getDefaultFieldMappings(
           enabled: true,
         });
       }
-      break;
-
-    case 'skills':
-      if (resumeData.skills) {
-        const skillsArray = Array.isArray(resumeData.skills)
-          ? resumeData.skills
-          : typeof resumeData.skills === 'string'
-          ? resumeData.skills.split(',').map(s => s.trim())
-          : [];
-        if (skillsArray.length > 0) {
-          mappings.push({
-            resumeField: 'skills',
-            componentField: 'skills',
-            value: skillsArray,
-            enabled: true,
-          });
-        }
-      }
-      break;
-
-    case 'contact':
       if (resumeData.email) {
         mappings.push({
           resumeField: 'email',
-          componentField: 'email',
+          componentField: 'social_links.email',
           value: resumeData.email,
           enabled: true,
         });
       }
-      if (resumeData.phone) {
-        mappings.push({
-          resumeField: 'phone',
-          componentField: 'phone',
-          value: resumeData.phone,
-          enabled: true,
-        });
-      }
-      if (resumeData.location || resumeData.address) {
-        mappings.push({
-          resumeField: 'location',
-          componentField: 'location',
-          value: resumeData.location || resumeData.address,
-          enabled: true,
-        });
-      }
-
-      const linkedin = resumeData.linkedin || resumeData.linkedin_url || resumeData.social?.linkedin;
+      const linkedin =
+        resumeData.linkedin || resumeData.linkedin_url || resumeData.social?.linkedin;
       const github = resumeData.github || resumeData.github_url || resumeData.social?.github;
-      const website = resumeData.website || resumeData.portfolio_url || resumeData.social?.website || resumeData.social?.portfolio;
-
+      const website =
+        resumeData.website ||
+        resumeData.portfolio_url ||
+        resumeData.social?.website ||
+        resumeData.social?.portfolio;
       if (linkedin) {
         mappings.push({
           resumeField: 'linkedin',
-          componentField: 'social.linkedin',
+          componentField: 'social_links.linkedin',
           value: linkedin,
           enabled: true,
         });
@@ -368,7 +376,7 @@ export function getDefaultFieldMappings(
       if (github) {
         mappings.push({
           resumeField: 'github',
-          componentField: 'social.github',
+          componentField: 'social_links.github',
           value: github,
           enabled: true,
         });
@@ -376,12 +384,116 @@ export function getDefaultFieldMappings(
       if (website) {
         mappings.push({
           resumeField: 'website',
-          componentField: 'social.website',
+          componentField: 'social_links.website',
           value: website,
           enabled: true,
         });
       }
       break;
+    }
+
+    case 'skills_cloud': {
+      const skillsArray = normalizeResumeSkills(resumeData.skills);
+      if (skillsArray.length > 0) {
+        mappings.push({
+          resumeField: 'skills',
+          componentField: 'skills',
+          value: skillsArray,
+          enabled: true,
+        });
+      }
+      break;
+    }
+
+    case 'experience_timeline': {
+      const timeline = convertExperienceToTimeline(resumeData.experience);
+      if (timeline.length > 0) {
+        mappings.push({
+          resumeField: 'experience',
+          componentField: 'experiences',
+          value: timeline,
+          enabled: true,
+        });
+      }
+      break;
+    }
+
+    case 'project_grid': {
+      const projects = convertExperienceToProjects(resumeData.experience || [], []);
+      if (projects.length > 0) {
+        mappings.push({
+          resumeField: 'experience',
+          componentField: 'projects',
+          value: projects,
+          enabled: true,
+        });
+      }
+      break;
+    }
+
+    case 'contact_form': {
+      if (resumeData.name) {
+        mappings.push({
+          resumeField: 'name',
+          componentField: 'title',
+          value: `Contact ${resumeData.name}`,
+          enabled: true,
+        });
+      }
+      // Map contact information fields
+      if (resumeData.email) {
+        mappings.push({
+          resumeField: 'email',
+          componentField: 'contact_info.email',
+          value: resumeData.email,
+          enabled: true,
+        });
+      }
+      if (resumeData.phone) {
+        mappings.push({
+          resumeField: 'phone',
+          componentField: 'contact_info.phone',
+          value: resumeData.phone,
+          enabled: true,
+        });
+      }
+      if (resumeData.location || resumeData.address) {
+        mappings.push({
+          resumeField: 'location',
+          componentField: 'contact_info.location',
+          value: resumeData.location || resumeData.address,
+          enabled: true,
+        });
+      }
+      const linkedin = resumeData.linkedin || resumeData.linkedin_url || resumeData.social?.linkedin;
+      if (linkedin) {
+        mappings.push({
+          resumeField: 'linkedin',
+          componentField: 'contact_info.linkedin',
+          value: linkedin,
+          enabled: true,
+        });
+      }
+      const github = resumeData.github || resumeData.github_url || resumeData.social?.github;
+      if (github) {
+        mappings.push({
+          resumeField: 'github',
+          componentField: 'contact_info.github',
+          value: github,
+          enabled: true,
+        });
+      }
+      const website = resumeData.website || resumeData.portfolio_url || resumeData.social?.website || resumeData.social?.portfolio;
+      if (website) {
+        mappings.push({
+          resumeField: 'website',
+          componentField: 'contact_info.website',
+          value: website,
+          enabled: true,
+        });
+      }
+      break;
+    }
   }
 
   return mappings;

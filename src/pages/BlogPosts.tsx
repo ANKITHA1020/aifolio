@@ -219,8 +219,11 @@ const BlogPosts = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80">
+    <div className="min-h-screen bg-background relative overflow-hidden bg-professional-image">
+      {/* Professional Background Overlay */}
+      <div className="bg-overlay-light"></div>
+      
+      <nav className="border-b border-border/50 backdrop-blur-xl bg-background/80 relative z-50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate("/dashboard")} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -233,7 +236,7 @@ const BlogPosts = () => {
         </div>
       </nav>
 
-      <div className="container mx-auto px-6 py-12 max-w-7xl">
+      <div className="container mx-auto px-6 py-12 max-w-7xl relative z-10">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Blog Posts</h1>
           <p className="text-muted-foreground">Manage your blog posts</p>
