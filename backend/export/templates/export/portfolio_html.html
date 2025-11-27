@@ -259,6 +259,153 @@
             margin-top: 60px;
         }
         
+        /* Experience Timeline */
+        .experience-timeline {
+            position: relative;
+            padding: 40px 20px;
+        }
+        
+        .experience-timeline-item {
+            position: relative;
+            padding-left: 40px;
+            padding-bottom: 30px;
+            border-left: 2px solid #667eea;
+        }
+        
+        .experience-timeline-item:last-child {
+            border-left: none;
+        }
+        
+        .experience-timeline-dot {
+            position: absolute;
+            left: -6px;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #667eea;
+        }
+        
+        .experience-timeline-job-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .experience-timeline-company {
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .experience-timeline-dates {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 10px 0;
+        }
+        
+        .experience-timeline-description {
+            color: #555;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+        
+        /* Services Section */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .service-card {
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .service-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .service-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .service-description {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        /* Achievements Counters */
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .achievement-item {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+        }
+        
+        .achievement-value {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        
+        .achievement-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        /* Testimonials */
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .testimonial-card {
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .testimonial-content {
+            font-style: italic;
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .testimonial-author {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .testimonial-role {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .testimonial-rating {
+            color: #ffc107;
+            margin-top: 10px;
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
             .header h1 {
@@ -270,152 +417,313 @@
             }
             
             .projects-grid,
-            .blog-posts {
+            .blog-posts,
+            .services-grid,
+            .testimonials-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .achievements-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header Section -->
-        {% if header_component %}
-        <div class="header">
-            {% if portfolio.profile_photo_url or portfolio.user_profile_photo_url %}
-            <img src="{{ portfolio.profile_photo_url|default:portfolio.user_profile_photo_url }}" alt="Profile Photo" class="profile-photo">
-            {% endif %}
-            <h1>{{ header_component.content.title|default:portfolio.title }}</h1>
-            {% if header_component.content.subtitle %}
-            <p class="subtitle">{{ header_component.content.subtitle }}</p>
-            {% endif %}
-        </div>
-        {% endif %}
-        
-        <!-- About Section -->
-        {% if about_component and about_component.content.bio %}
-        <section class="section">
-            <h2 class="section-title">About Me</h2>
-            <div class="about-content">
-                {{ about_component.content.bio|linebreaks }}
-            </div>
-        </section>
-        {% endif %}
-        
-        <!-- Skills Section -->
-        {% if skills_component and skills_component.content.skills %}
-        <section class="section">
-            <h2 class="section-title">Skills</h2>
-            <div class="skills-container">
-                {% for skill in skills_component.content.skills %}
-                <span class="skill-tag">{{ skill.name|default:skill }}</span>
-                {% endfor %}
-            </div>
-        </section>
-        {% endif %}
-        
-        <!-- Projects Section -->
-        {% if projects_component and projects_component.content.projects %}
-        <section class="section">
-            <h2 class="section-title">Projects</h2>
-            <div class="projects-grid">
-                {% for project in projects_component.content.projects %}
-                <div class="project-card">
-                    {% if project.image %}
-                    <img src="{{ project.image }}" alt="{{ project.title }}" class="project-image">
+        <!-- Render all components in order -->
+        {% for component in components %}
+            {% if component.component_type == 'hero_banner' or component.component_type == 'header' %}
+                <!-- Hero Banner / Header -->
+                <div class="header">
+                    {% if portfolio.profile_photo_url or portfolio.user_profile_photo_url %}
+                    <img src="{{ portfolio.profile_photo_url|default:portfolio.user_profile_photo_url }}" alt="Profile Photo" class="profile-photo">
                     {% endif %}
-                    <div class="project-content">
-                        <h3 class="project-title">{{ project.title }}</h3>
-                        <p class="project-description">{{ project.description|default:project.short_description|truncatewords:30 }}</p>
-                        {% if project.technologies %}
-                        <div class="project-technologies">
-                            {% for tech in project.technologies %}
-                            <span class="tech-tag">{{ tech }}</span>
+                    <h1>{{ component.content.title|default:portfolio.title }}</h1>
+                    {% if component.content.subtitle %}
+                    <p class="subtitle">{{ component.content.subtitle }}</p>
+                    {% endif %}
+                </div>
+            
+            {% elif component.component_type == 'about_me_card' or component.component_type == 'about' %}
+                <!-- About Me Card -->
+                <section class="section">
+                    <h2 class="section-title">About Me</h2>
+                    {% if component.content.image %}
+                    <img src="{{ component.content.image }}" alt="About Me" style="max-width: 300px; border-radius: 8px; margin-bottom: 20px;">
+                    {% endif %}
+                    {% if component.content.name %}
+                    <h3 style="font-size: 1.5rem; margin-bottom: 10px;">{{ component.content.name }}</h3>
+                    {% endif %}
+                    {% if component.content.title %}
+                    <p style="color: #667eea; font-weight: 500; margin-bottom: 15px;">{{ component.content.title }}</p>
+                    {% endif %}
+                    <div class="about-content">
+                        {% if component.content.bio %}
+                            {{ component.content.bio|linebreaks }}
+                        {% elif component.content.description %}
+                            {{ component.content.description|linebreaks }}
+                        {% endif %}
+                    </div>
+                </section>
+            
+            {% elif component.component_type == 'skills_cloud' or component.component_type == 'skills' %}
+                <!-- Skills Cloud -->
+                <section class="section">
+                    <h2 class="section-title">Skills</h2>
+                    <div class="skills-container">
+                        {% if component.content.skills %}
+                            {% for skill in component.content.skills %}
+                                {% if skill.name %}
+                                    <span class="skill-tag">{{ skill.name }}{% if skill.level %} ({{ skill.level }}){% endif %}</span>
+                                {% else %}
+                                    <span class="skill-tag">{{ skill }}</span>
+                                {% endif %}
                             {% endfor %}
+                        {% endif %}
+                    </div>
+                </section>
+            
+            {% elif component.component_type == 'experience_timeline' %}
+                <!-- Experience Timeline -->
+                <section class="section">
+                    <h2 class="section-title">Experience</h2>
+                    <div class="experience-timeline">
+                        {% if component.content.experiences %}
+                            {% for exp in component.content.experiences %}
+                            <div class="experience-timeline-item">
+                                <div class="experience-timeline-dot"></div>
+                                <div class="experience-timeline-content">
+                                    <h3 class="experience-timeline-job-title">{{ exp.title|default:"Position" }}</h3>
+                                    {% if exp.company %}
+                                    <div class="experience-timeline-company">{{ exp.company }}</div>
+                                    {% endif %}
+                                    {% if exp.startDate or exp.endDate %}
+                                    <div class="experience-timeline-dates">
+                                        {{ exp.startDate|default:"" }}{% if exp.startDate and exp.endDate %} - {% endif %}{{ exp.endDate|default:"" }}
+                                    </div>
+                                    {% endif %}
+                                    {% if exp.location %}
+                                    <div style="color: #666; font-size: 0.9rem; margin: 5px 0;">{{ exp.location }}</div>
+                                    {% endif %}
+                                    {% if exp.description %}
+                                    <p class="experience-timeline-description">{{ exp.description|linebreaks }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </section>
+            
+            {% elif component.component_type == 'project_grid' or component.component_type == 'projects' %}
+                <!-- Project Grid -->
+                <section class="section">
+                    <h2 class="section-title">Projects</h2>
+                    <div class="projects-grid">
+                        {% if component.content.projects %}
+                            {% for project in component.content.projects %}
+                            <div class="project-card">
+                                {% if project.image %}
+                                <img src="{{ project.image }}" alt="{{ project.title }}" class="project-image">
+                                {% endif %}
+                                <div class="project-content">
+                                    <h3 class="project-title">{{ project.title }}</h3>
+                                    <p class="project-description">
+                                        {% if project.description %}
+                                            {{ project.description|truncatewords:30 }}
+                                        {% elif project.short_description %}
+                                            {{ project.short_description|truncatewords:30 }}
+                                        {% endif %}
+                                    </p>
+                                    {% if project.technologies %}
+                                    <div class="project-technologies">
+                                        {% for tech in project.technologies %}
+                                        <span class="tech-tag">{{ tech }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="project-links">
+                                        {% if project.github_url %}
+                                        <a href="{{ project.github_url }}" class="project-link" target="_blank">GitHub</a>
+                                        {% endif %}
+                                        {% if project.live_url %}
+                                        <a href="{{ project.live_url }}" class="project-link" target="_blank">Live Demo</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </section>
+            
+            {% elif component.component_type == 'services_section' %}
+                <!-- Services Section -->
+                <section class="section">
+                    <h2 class="section-title">Services</h2>
+                    <div class="services-grid">
+                        {% if component.content.services %}
+                            {% for service in component.content.services %}
+                            <div class="service-card">
+                                {% if service.icon %}
+                                <div class="service-icon">{{ service.icon }}</div>
+                                {% endif %}
+                                <h3 class="service-title">{{ service.title }}</h3>
+                                <p class="service-description">{{ service.description|linebreaks }}</p>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </section>
+            
+            {% elif component.component_type == 'achievements_counters' %}
+                <!-- Achievements Counters -->
+                <section class="section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
+                    <h2 class="section-title" style="color: white; border-bottom-color: rgba(255,255,255,0.3);">Achievements</h2>
+                    <div class="achievements-grid">
+                        {% if component.content.counters %}
+                            {% for counter in component.content.counters %}
+                            <div class="achievement-item" style="background: rgba(255,255,255,0.1);">
+                                <div class="achievement-value">
+                                    {{ counter.prefix|default:"" }}{{ counter.value }}{{ counter.suffix|default:"" }}
+                                </div>
+                                <div class="achievement-label">{{ counter.label }}</div>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </section>
+            
+            {% elif component.component_type == 'testimonials_carousel' %}
+                <!-- Testimonials Carousel -->
+                <section class="section">
+                    <h2 class="section-title">Testimonials</h2>
+                    <div class="testimonials-grid">
+                        {% if component.content.testimonials %}
+                            {% for testimonial in component.content.testimonials %}
+                            <div class="testimonial-card">
+                                <p class="testimonial-content">
+                                    {% if testimonial.content %}
+                                        "{{ testimonial.content }}"
+                                    {% elif testimonial.quote %}
+                                        "{{ testimonial.quote }}"
+                                    {% endif %}
+                                </p>
+                                <div class="testimonial-author">{{ testimonial.name }}</div>
+                                <div class="testimonial-role">{{ testimonial.role }}{% if testimonial.company %}, {{ testimonial.company }}{% endif %}</div>
+                                {% if testimonial.rating %}
+                                <div class="testimonial-rating">
+                                    {% for i in "12345"|make_list %}
+                                        {% if forloop.counter <= testimonial.rating %}★{% else %}☆{% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </section>
+            
+            {% elif component.component_type == 'blog_preview_grid' or component.component_type == 'blog' %}
+                <!-- Blog Preview Grid -->
+                <section class="section">
+                    <h2 class="section-title">Blog Posts</h2>
+                    <div class="blog-posts">
+                        {% if component.content.posts %}
+                            {% for post in component.content.posts %}
+                            <div class="blog-card">
+                                {% if post.featured_image %}
+                                <img src="{{ post.featured_image }}" alt="{{ post.title }}" class="blog-image">
+                                {% endif %}
+                                <div class="blog-content">
+                                    <h3 class="blog-title">{{ post.title }}</h3>
+                                    <p class="blog-excerpt">
+                                        {% if post.excerpt %}
+                                            {{ post.excerpt|truncatewords:20 }}
+                                        {% elif post.content_markdown %}
+                                            {{ post.content_markdown|truncatewords:20 }}
+                                        {% endif %}
+                                    </p>
+                                    {% if post.published_date %}
+                                    <p class="blog-date">{{ post.published_date|date:"F d, Y" }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </section>
+            
+            {% elif component.component_type == 'contact_form' or component.component_type == 'contact' %}
+                <!-- Contact Form -->
+                <section class="section">
+                    <h2 class="section-title">Contact</h2>
+                    <div class="contact-info">
+                        {% if component.content.email %}
+                        <div class="contact-item">
+                            <div class="contact-label">Email</div>
+                            <div class="contact-value">
+                                <a href="mailto:{{ component.content.email }}">{{ component.content.email }}</a>
+                            </div>
                         </div>
                         {% endif %}
-                        <div class="project-links">
-                            {% if project.github_url %}
-                            <a href="{{ project.github_url }}" class="project-link" target="_blank">GitHub</a>
-                            {% endif %}
-                            {% if project.live_url %}
-                            <a href="{{ project.live_url }}" class="project-link" target="_blank">Live Demo</a>
-                            {% endif %}
+                        {% if component.content.phone %}
+                        <div class="contact-item">
+                            <div class="contact-label">Phone</div>
+                            <div class="contact-value">{{ component.content.phone }}</div>
                         </div>
+                        {% endif %}
+                        {% if component.content.location %}
+                        <div class="contact-item">
+                            <div class="contact-label">Location</div>
+                            <div class="contact-value">{{ component.content.location }}</div>
+                        </div>
+                        {% endif %}
                     </div>
-                </div>
-                {% endfor %}
-            </div>
-        </section>
-        {% endif %}
-        
-        <!-- Blog Section -->
-        {% if blog_component and blog_component.content.posts %}
-        <section class="section">
-            <h2 class="section-title">Blog Posts</h2>
-            <div class="blog-posts">
-                {% for post in blog_component.content.posts %}
-                <div class="blog-card">
-                    {% if post.featured_image %}
-                    <img src="{{ post.featured_image }}" alt="{{ post.title }}" class="blog-image">
+                    <div class="social-links">
+                        {% if component.content.github %}
+                        <a href="{{ component.content.github }}" class="social-link" target="_blank">GitHub</a>
+                        {% endif %}
+                        {% if component.content.linkedin %}
+                        <a href="{{ component.content.linkedin }}" class="social-link" target="_blank">LinkedIn</a>
+                        {% endif %}
+                        {% if component.content.website %}
+                        <a href="{{ component.content.website }}" class="social-link" target="_blank">Website</a>
+                        {% endif %}
+                        {% if component.content.twitter %}
+                        <a href="{{ component.content.twitter }}" class="social-link" target="_blank">Twitter</a>
+                        {% endif %}
+                    </div>
+                </section>
+            
+            {% elif component.component_type == 'footer' %}
+                <!-- Footer Component -->
+                <footer class="footer">
+                    {% if component.content.copyright %}
+                    <p>{{ component.content.copyright }}</p>
+                    {% else %}
+                    <p>&copy; {{ portfolio.title }} - Portfolio Export</p>
                     {% endif %}
-                    <div class="blog-content">
-                        <h3 class="blog-title">{{ post.title }}</h3>
-                        <p class="blog-excerpt">{{ post.excerpt|default:post.content_markdown|truncatewords:20 }}</p>
-                        {% if post.published_date %}
-                        <p class="blog-date">{{ post.published_date|date:"F d, Y" }}</p>
-                        {% endif %}
+                    {% if component.content.links %}
+                    <div style="margin-top: 20px;">
+                        {% for link in component.content.links %}
+                        <a href="{{ link.url }}" style="margin: 0 10px; color: #667eea; text-decoration: none;">{{ link.label }}</a>
+                        {% endfor %}
                     </div>
-                </div>
-                {% endfor %}
-            </div>
-        </section>
-        {% endif %}
-        
-        <!-- Contact Section -->
-        {% if contact_component %}
-        <section class="section">
-            <h2 class="section-title">Contact</h2>
-            <div class="contact-info">
-                {% if contact_component.content.email %}
-                <div class="contact-item">
-                    <div class="contact-label">Email</div>
-                    <div class="contact-value">
-                        <a href="mailto:{{ contact_component.content.email }}">{{ contact_component.content.email }}</a>
-                    </div>
-                </div>
-                {% endif %}
-                {% if contact_component.content.phone %}
-                <div class="contact-item">
-                    <div class="contact-label">Phone</div>
-                    <div class="contact-value">{{ contact_component.content.phone }}</div>
-                </div>
-                {% endif %}
-                {% if contact_component.content.location %}
-                <div class="contact-item">
-                    <div class="contact-label">Location</div>
-                    <div class="contact-value">{{ contact_component.content.location }}</div>
-                </div>
-                {% endif %}
-            </div>
-            <div class="social-links">
-                {% if contact_component.content.github %}
-                <a href="{{ contact_component.content.github }}" class="social-link" target="_blank">GitHub</a>
-                {% endif %}
-                {% if contact_component.content.linkedin %}
-                <a href="{{ contact_component.content.linkedin }}" class="social-link" target="_blank">LinkedIn</a>
-                {% endif %}
-                {% if contact_component.content.website %}
-                <a href="{{ contact_component.content.website }}" class="social-link" target="_blank">Website</a>
-                {% endif %}
-            </div>
-        </section>
-        {% endif %}
+                    {% endif %}
+                </footer>
+            {% endif %}
+        {% endfor %}
     </div>
     
+    <!-- Default Footer if no footer component -->
+    {% if not has_footer %}
     <footer class="footer">
         <p>&copy; {{ portfolio.title }} - Portfolio Export</p>
         <p>Generated on {{ export_date|date:"F d, Y" }}</p>
     </footer>
+    {% endif %}
 </body>
 </html>
 

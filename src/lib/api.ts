@@ -560,6 +560,8 @@ export const portfolioApi = {
         is_visible: boolean;
         content: Record<string, any>;
       }>;
+      profile_photo_url?: string | null;
+      user_profile_photo_url?: string | null;
       created_at: string;
       updated_at: string;
     }>(`/portfolios/portfolios/${id}/`);
@@ -625,6 +627,8 @@ export const portfolioApi = {
       template_type: string;
       components: Array<any>;
       custom_settings: Record<string, any>;
+      profile_photo_url?: string | null;
+      user_profile_photo_url?: string | null;
     }>(`/portfolios/portfolios/${id}/preview/`);
   },
 
@@ -669,11 +673,7 @@ export const portfolioApi = {
   uploadProfilePhoto: async (portfolioId: number, photo: File) => {
     const formData = new FormData();
     formData.append('photo', photo);
-    return api.post(`/portfolios/portfolios/${portfolioId}/upload_photo/`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return api.upload(`/portfolios/portfolios/${portfolioId}/upload_photo/`, formData);
   },
 
   generateContent: async (portfolioId: number, componentType: string, context?: Record<string, any>, componentId?: number) => {
@@ -688,13 +688,18 @@ export const portfolioApi = {
     });
   },
 
-  getResumeData: async () => {
+  getResumeData: async (resumeId?: number) => {
+    const url = resumeId 
+      ? `/portfolios/portfolios/resume_data/?resume_id=${resumeId}`
+      : '/portfolios/portfolios/resume_data/';
     return api.get<{
       has_resume: boolean;
       structured_data: Record<string, any>;
       resume_id?: number;
+      filename?: string;
+      uploaded_at?: string;
       message?: string;
-    }>('/portfolios/portfolios/resume_data/');
+    }>(url);
   },
 
   optimizeSEO: async (portfolioId: number) => {
@@ -746,6 +751,8 @@ export const portfolioApi = {
         is_visible: boolean;
         content: Record<string, any>;
       }>;
+      profile_photo_url?: string | null;
+      user_profile_photo_url?: string | null;
       seo_title?: string;
       seo_description?: string;
       seo_keywords?: string;

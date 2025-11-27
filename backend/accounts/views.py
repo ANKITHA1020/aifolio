@@ -1,6 +1,7 @@
 from rest_framework import status, permissions
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from django.contrib.auth import login
@@ -9,6 +10,7 @@ from django.db import IntegrityError
 from allauth.socialaccount.models import SocialAccount
 from allauth.socialaccount.providers.google.views import oauth2_login
 from allauth.socialaccount.providers.github.views import oauth2_login as github_oauth2_login
+import logging
 from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
@@ -16,6 +18,8 @@ from .serializers import (
     UserProfileSerializer
 )
 from .models import UserProfile
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
@@ -125,39 +129,97 @@ def logout_view(request):
 
 @api_view(['GET', 'PUT', 'PATCH'])
 @permission_classes([permissions.IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def profile_view(request):
     """
     Get or update user profile
+    Supports both JSON and multipart/form-data (for file uploads)
     """
     try:
-        profile = request.user.profile
-    except UserProfile.DoesNotExist:
-        # Create profile if it doesn't exist
-        profile = UserProfile.objects.create(user=request.user)
-    
-    if request.method == 'GET':
-        serializer = UserProfileSerializer(profile)
-        return Response(serializer.data)
-    
-    elif request.method in ['PUT', 'PATCH']:
-        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
+        # Get or create profile
+        try:
+            profile = request.user.profile
+        except UserProfile.DoesNotExist:
+            # Create profile if it doesn't exist
+            profile = UserProfile.objects.create(user=request.user)
+            logger.info(f"Created profile for user {request.user.email}")
+        
+        if request.method == 'GET':
+            serializer = UserProfileSerializer(profile)
+            return Response(serializer.data)
+        
+        elif request.method in ['PUT', 'PATCH']:
+            # Prepare data for serializer
+            # Handle both regular data and FormData
+            data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
             
-            # Update user fields if provided
-            if 'first_name' in request.data:
-                request.user.first_name = request.data['first_name']
-            if 'last_name' in request.data:
-                request.user.last_name = request.data['last_name']
-            request.user.save()
-            
-            # Handle file upload for photo
+            # Remove photo from data if it's in FILES (will handle separately)
             if 'photo' in request.FILES:
-                profile.photo = request.FILES['photo']
-                profile.save()
+                data.pop('photo', None)
             
-            return Response(UserProfileSerializer(profile).data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Validate file if provided
+            if 'photo' in request.FILES:
+                photo = request.FILES['photo']
+                # Validate file type
+                if not photo.content_type.startswith('image/'):
+                    return Response(
+                        {'error': 'File must be an image (JPG, PNG, or GIF)'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                # Validate file size (max 2MB)
+                if photo.size > 2 * 1024 * 1024:
+                    return Response(
+                        {'error': 'File size must be less than 2MB'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            # Create serializer with data (excluding photo)
+            # The serializer will handle nested user fields (first_name, last_name) automatically
+            serializer = UserProfileSerializer(profile, data=data, partial=True)
+            
+            if serializer.is_valid():
+                # Save profile fields (bio, theme_preference, etc.) and user fields (first_name, last_name)
+                # The serializer's update method handles nested user fields
+                serializer.save()
+                
+                # Handle file upload for photo (after serializer save)
+                if 'photo' in request.FILES:
+                    try:
+                        profile.photo = request.FILES['photo']
+                        profile.save()
+                        logger.info(f"Updated photo for user {request.user.email}")
+                    except Exception as e:
+                        logger.error(f"Error saving photo: {str(e)}")
+                        return Response(
+                            {'error': f'Failed to save photo: {str(e)}'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                        )
+                
+                # Refresh profile from database to get updated data
+                profile.refresh_from_db()
+                request.user.refresh_from_db()
+                
+                # Return updated profile data
+                updated_serializer = UserProfileSerializer(profile)
+                return Response(updated_serializer.data, status=status.HTTP_200_OK)
+            
+            # Serializer validation failed
+            logger.warning(f"Profile update validation failed for user {request.user.email}: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        else:
+            return Response(
+                {'error': 'Method not allowed'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED
+            )
+    
+    except Exception as e:
+        # Log the full error for debugging
+        logger.error(f"Error in profile_view for user {request.user.email}: {str(e)}", exc_info=True)
+        return Response(
+            {'error': f'An error occurred while updating your profile: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET'])

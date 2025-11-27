@@ -1,6 +1,6 @@
 import { User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ComponentErrorBoundary from "./ComponentErrorBoundary";
 import { getImageUrl } from "@/utils/imageUtils";
 import { motion } from "framer-motion";
@@ -24,6 +24,19 @@ export default function TemplateHeader({
   userProfilePhotoUrl,
 }: HeaderProps) {
   const [imageError, setImageError] = useState(false);
+  const currentPhotoUrl = profilePhotoUrl || userProfilePhotoUrl;
+
+  // Reset image error when photo URL changes
+  useEffect(() => {
+    setImageError(false);
+    
+    // Debug logging in development
+    if (import.meta.env.DEV && currentPhotoUrl) {
+      console.log('[TemplateHeader] Profile photo URL:', currentPhotoUrl);
+      const resolvedUrl = getImageUrl(currentPhotoUrl);
+      console.log('[TemplateHeader] Resolved image URL:', resolvedUrl);
+    }
+  }, [currentPhotoUrl]);
 
   // Validate title
   if (!title || typeof title !== "string" || title.trim().length === 0) {
@@ -47,10 +60,11 @@ export default function TemplateHeader({
   };
 
   const headerClass = classes[templateType as keyof typeof classes] || classes.modern;
-  const displayPhoto = (profilePhotoUrl || userProfilePhotoUrl) && !imageError;
-  const photoUrl = displayPhoto ? getImageUrl(profilePhotoUrl || userProfilePhotoUrl || '') : null;
+  const displayPhoto = currentPhotoUrl && !imageError;
+  const photoUrl = displayPhoto ? getImageUrl(currentPhotoUrl) : null;
 
-  const handleImageError = () => {
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.error('[TemplateHeader] Failed to load profile photo:', photoUrl);
     setImageError(true);
   };
 
@@ -98,6 +112,11 @@ export default function TemplateHeader({
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 300 }}
                   onError={handleImageError}
+                  onLoad={() => {
+                    if (import.meta.env.DEV) {
+                      console.log('[TemplateHeader] Profile photo loaded successfully:', photoUrl);
+                    }
+                  }}
                   loading="lazy"
                 />
                 <div className="absolute inset-0 rounded-full bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

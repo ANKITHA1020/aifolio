@@ -373,7 +373,7 @@ const UploadResume = () => {
                               e.stopPropagation();
                               handleParseResume(resume.id);
                             }}
-                            disabled={parsing === resume.id || resume.status === "processing"}
+                            disabled={parsing === resume.id}
                           >
                             {parsing === resume.id ? (
                               <>

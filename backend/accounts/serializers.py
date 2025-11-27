@@ -10,8 +10,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     Serializer for UserProfile model
     """
     email = serializers.EmailField(source='user.email', read_only=True)
-    first_name = serializers.CharField(source='user.first_name', required=False)
-    last_name = serializers.CharField(source='user.last_name', required=False)
+    first_name = serializers.CharField(source='user.first_name', required=False, allow_blank=True)
+    last_name = serializers.CharField(source='user.last_name', required=False, allow_blank=True)
     
     class Meta:
         model = UserProfile
@@ -20,6 +20,29 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'theme_preference', 'role', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'role']
+    
+    def update(self, instance, validated_data):
+        """
+        Update UserProfile and related User fields
+        """
+        # Extract user-related fields
+        user_data = validated_data.pop('user', {})
+        
+        # Update profile fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update user fields if provided
+        if user_data:
+            user = instance.user
+            if 'first_name' in user_data:
+                user.first_name = user_data['first_name']
+            if 'last_name' in user_data:
+                user.last_name = user_data['last_name']
+            user.save()
+        
+        return instance
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):

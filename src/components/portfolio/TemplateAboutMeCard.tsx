@@ -1,5 +1,8 @@
 import ComponentErrorBoundary from "./ComponentErrorBoundary";
 import { Linkedin, Github, Twitter, Mail, Globe } from "lucide-react";
+import { getImageUrl } from "@/utils/imageUtils";
+import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 interface AboutMeCardProps {
   name?: string;
@@ -15,6 +18,8 @@ interface AboutMeCardProps {
   };
   templateType: string;
   config?: Record<string, any>;
+  profilePhotoUrl?: string | null;
+  userProfilePhotoUrl?: string | null;
 }
 
 export default function TemplateAboutMeCard({
@@ -25,21 +30,57 @@ export default function TemplateAboutMeCard({
   socialLinks = {},
   templateType,
   config,
+  profilePhotoUrl,
+  userProfilePhotoUrl,
 }: AboutMeCardProps) {
+  const [imageError, setImageError] = useState(false);
+  
+  // Prioritize portfolio profile photo, then user profile photo, then component image
+  const displayPhotoUrl = profilePhotoUrl || userProfilePhotoUrl || image;
+  const photoUrl = displayPhotoUrl ? getImageUrl(displayPhotoUrl) : null;
+  const currentPhotoUrl = profilePhotoUrl || userProfilePhotoUrl || image;
+
+  // Reset image error when photo URL changes
+  useEffect(() => {
+    setImageError(false);
+  }, [currentPhotoUrl]);
+
+  // Template-specific photo styling
+  const getPhotoClasses = () => {
+    const baseClasses = "about-me-card-image";
+    const templateClasses = {
+      modern: "rounded-2xl border-4 border-purple-200 shadow-xl",
+      classic: "rounded-lg border-4 border-blue-200 shadow-lg",
+      minimalist: "rounded-full border-2 border-gray-200 shadow-md",
+      developer: "rounded-lg border-4 border-green-200 shadow-lg",
+      designer: "rounded-2xl border-4 border-orange-200 shadow-xl",
+    };
+    return cn(baseClasses, templateClasses[templateType as keyof typeof templateClasses] || templateClasses.modern);
+  };
+
   return (
     <ComponentErrorBoundary componentName="About Me Card">
       <section id="section-about_me_card" className={`about-me-card about-me-card-${templateType}`}>
         <div className="about-me-card-container">
           <div className="about-me-card-content">
-            {image && (
+            {/* Column 1: Profile Photo */}
+            {photoUrl && !imageError && (
               <div className="about-me-card-image-wrapper">
                 <img
-                  src={image}
+                  src={photoUrl}
                   alt={name || "Profile"}
-                  className="about-me-card-image"
+                  className={getPhotoClasses()}
+                  onError={() => setImageError(true)}
+                  onLoad={() => {
+                    if (import.meta.env.DEV) {
+                      console.log('[TemplateAboutMeCard] Profile photo loaded:', photoUrl);
+                    }
+                  }}
+                  loading="lazy"
                 />
               </div>
             )}
+            {/* Column 2: About Me Content */}
             <div className="about-me-card-text">
               {name && <h2 className="about-me-card-name">{name}</h2>}
               {title && <p className="about-me-card-title">{title}</p>}

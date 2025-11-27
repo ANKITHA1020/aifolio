@@ -10,7 +10,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 export function getImageUrl(imagePath: string | null | undefined): string | null {
   if (!imagePath) return null;
   
-  // If already absolute URL, return as is
+  // If already absolute URL, return as is (handles URLs with query parameters)
   if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
     return imagePath;
   }

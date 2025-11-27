@@ -2,6 +2,14 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   ChevronDown,
   ChevronUp,
@@ -16,6 +24,8 @@ import {
   Copy,
   Check,
   Sparkles,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ResumeFieldCard from "./ResumeFieldCard";
@@ -23,6 +33,12 @@ import { getAvailableResumeFields, ResumeData } from "@/utils/resumeFieldMapper"
 
 interface ResumeDataPanelProps {
   resumeData: ResumeData | null;
+  availableResumes?: Array<{id: number; file: string; uploaded_at: string; status: string}>;
+  selectedResumeId?: number | null;
+  loadingResumes?: boolean;
+  loadingResumeData?: boolean;
+  onResumeSelect?: (resumeId: number | null) => void;
+  onRefresh?: () => void;
   onFillComponent?: (componentType: string) => void;
   onFillAll?: () => void;
   className?: string;
@@ -30,6 +46,12 @@ interface ResumeDataPanelProps {
 
 export default function ResumeDataPanel({
   resumeData,
+  availableResumes = [],
+  selectedResumeId,
+  loadingResumes = false,
+  loadingResumeData = false,
+  onResumeSelect,
+  onRefresh,
   onFillComponent,
   onFillAll,
   className,
@@ -169,6 +191,69 @@ export default function ResumeDataPanel({
 
       {expanded && (
         <div className="space-y-4">
+          {/* Resume Selection */}
+          {availableResumes.length > 0 && onResumeSelect && (
+            <div className="space-y-2 pb-3 border-b">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium text-muted-foreground">Select Resume</Label>
+                {onRefresh && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onRefresh}
+                    disabled={loadingResumes || loadingResumeData}
+                    title="Refresh resume list"
+                  >
+                    {loadingResumes || loadingResumeData ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-3 h-3" />
+                    )}
+                  </Button>
+                )}
+              </div>
+              <Select
+                value={selectedResumeId?.toString() || ""}
+                onValueChange={(value) => {
+                  onResumeSelect(value ? parseInt(value) : null);
+                }}
+                disabled={loadingResumes || loadingResumeData}
+              >
+                <SelectTrigger className="w-full h-9">
+                  <SelectValue placeholder="Select a resume" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableResumes.map((resume) => {
+                    const filename = resume.file.split('/').pop() || 'Resume';
+                    const uploadDate = new Date(resume.uploaded_at).toLocaleDateString();
+                    const isSelected = resume.id === selectedResumeId;
+                    return (
+                      <SelectItem key={resume.id} value={resume.id.toString()}>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-3 h-3" />
+                            <span className="font-medium truncate">{filename}</span>
+                            {isSelected && (
+                              <Badge variant="secondary" className="ml-auto text-xs">Selected</Badge>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground ml-5">{uploadDate}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              {loadingResumeData && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Loading resume data...</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {onFillAll && (
             <Button
               variant="outline"

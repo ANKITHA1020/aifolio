@@ -19,6 +19,11 @@ import {
   FolderOpen,
   Globe,
   FileEdit,
+  User,
+  Mail,
+  Calendar,
+  ChevronRight,
+  Clock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authApi, api, portfolioApi, resumeApi, dashboardApi } from "@/lib/api";
@@ -28,9 +33,11 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [portfolios, setPortfolios] = useState<any[]>([]);
   const [portfoliosCount, setPortfoliosCount] = useState(0);
   const [loadingPortfolios, setLoadingPortfolios] = useState(true);
+  const [showFullBio, setShowFullBio] = useState(false);
 
   const loadPortfolios = async () => {
     try {
@@ -60,17 +67,51 @@ const Dashboard = () => {
           setTimeout(() => reject(new Error('Request timeout')), 10000);
         });
         
-        const userDataPromise = authApi.getCurrentUser();
-        const userData = await Promise.race([userDataPromise, timeoutPromise]) as any;
+        // Fetch both user data and profile data
+        const [userDataPromise, profileDataPromise] = await Promise.allSettled([
+          Promise.race([authApi.getCurrentUser(), timeoutPromise]),
+          Promise.race([authApi.getProfile(), timeoutPromise]),
+        ]);
         
         if (!isMounted) return;
         
-        console.log('User data:', userData); // Debug log
+        let mergedUserData: any = null;
         
-        // Handle different response formats
-        if (userData && (userData.user || userData.id || userData.email)) {
-          setUser(userData.user || userData);
+        // Handle user data
+        if (userDataPromise.status === 'fulfilled') {
+          const userData = userDataPromise.value as any;
+          console.log('User data:', userData); // Debug log
+          
+          // Handle different response formats
+          if (userData && (userData.user || userData.id || userData.email)) {
+            mergedUserData = userData.user || userData;
+          }
+        }
+        
+        // Handle profile data
+        if (profileDataPromise.status === 'fulfilled') {
+          const profileData = profileDataPromise.value as any;
+          console.log('Profile data:', profileData); // Debug log
+          
+          if (mergedUserData) {
+            // Merge profile data into user object
+            mergedUserData.profile = {
+              ...mergedUserData.profile,
+              ...profileData,
+            };
+            // Also add profile fields directly to user for easier access
+            mergedUserData.bio = profileData.bio || mergedUserData.bio;
+            mergedUserData.photo = profileData.photo || mergedUserData.photo;
+            mergedUserData.theme_preference = profileData.theme_preference || mergedUserData.theme_preference;
+            mergedUserData.first_name = profileData.first_name || mergedUserData.first_name;
+            mergedUserData.last_name = profileData.last_name || mergedUserData.last_name;
+          }
+        }
+        
+        if (mergedUserData && (mergedUserData.id || mergedUserData.email)) {
+          setUser(mergedUserData);
           setLoading(false);
+          setLoadingProfile(false);
           // Load portfolios after user is loaded
           await loadPortfolios();
         } else {
@@ -83,6 +124,7 @@ const Dashboard = () => {
         // Not authenticated - clear tokens and redirect
         api.clearTokens();
         setLoading(false);
+        setLoadingProfile(false);
         navigate("/auth", { replace: true });
       }
     };
@@ -108,6 +150,54 @@ const Dashboard = () => {
       api.clearTokens();
       navigate("/");
     }
+  };
+
+  // Helper functions for user data
+  const getFullName = () => {
+    const firstName = user?.first_name || user?.profile?.first_name || '';
+    const lastName = user?.last_name || user?.profile?.last_name || '';
+    if (firstName || lastName) {
+      return `${firstName} ${lastName}`.trim();
+    }
+    return user?.email?.split('@')[0] || 'User';
+  };
+
+  const getAccountAge = () => {
+    const dateJoined = user?.date_joined || user?.profile?.created_at;
+    if (!dateJoined) return 'N/A';
+    
+    const joinDate = new Date(dateJoined);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - joinDate.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return '1 day';
+    if (diffDays < 30) return `${diffDays} days`;
+    if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      return `${months} ${months === 1 ? 'month' : 'months'}`;
+    }
+    const years = Math.floor(diffDays / 365);
+    return `${years} ${years === 1 ? 'year' : 'years'}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  const getBioPreview = () => {
+    const bio = user?.bio || user?.profile?.bio || '';
+    if (!bio) return null;
+    const maxLength = 150;
+    if (bio.length <= maxLength) return bio;
+    return showFullBio ? bio : `${bio.substring(0, maxLength)}...`;
   };
 
   // Always render something, even if loading
@@ -251,7 +341,7 @@ const Dashboard = () => {
                     </span>
                   </h1>
                   <p className="text-lg md:text-xl text-foreground/80 font-medium">
-                    {user?.email || user?.profile?.email || 'User'}
+                    {getFullName()}
                   </p>
                 </div>
               </div>
@@ -264,54 +354,160 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-md hover:shadow-2xl hover:scale-105 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        {/* User Profile Information Section */}
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-1 h-8 bg-gradient-primary rounded-full"></div>
+            <h2 className="text-2xl md:text-3xl font-bold">Your Profile</h2>
+          </div>
+          <Card className="p-6 md:p-8 bg-gradient-card border-border/50 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50"></div>
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <FolderOpen className="w-6 h-6 text-white" />
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* Profile Photo */}
+                <div className="flex-shrink-0">
+                  {user?.photo || user?.profile?.photo ? (
+                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden border-4 border-primary/20 shadow-lg">
+                      <img
+                        src={user?.photo || user?.profile?.photo}
+                        alt={getFullName()}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
+                      <User className="w-12 h-12 md:w-16 md:h-16 text-primary-foreground" />
+                    </div>
+                  )}
+                </div>
+                
+                {/* User Information */}
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h3 className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
+                      {getFullName()}
+                    </h3>
+                    <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                      <Mail className="w-4 h-4" />
+                      <span>{user?.email || user?.profile?.email || 'No email'}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Bio */}
+                  {(user?.bio || user?.profile?.bio) && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground font-medium">Bio</p>
+                      <p className="text-foreground/90 leading-relaxed">
+                        {getBioPreview()}
+                        {(user?.bio || user?.profile?.bio || '').length > 150 && (
+                          <button
+                            onClick={() => setShowFullBio(!showFullBio)}
+                            className="ml-2 text-primary hover:underline font-medium"
+                          >
+                            {showFullBio ? 'Show less' : 'Read more'}
+                          </button>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Account Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Member since</p>
+                        <p className="text-sm font-medium">{formatDate(user?.date_joined || user?.profile?.created_at)}</p>
+                        <p className="text-xs text-muted-foreground">{getAccountAge()}</p>
+                      </div>
+                    </div>
+                    {user?.profile?.updated_at && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                          <Clock className="w-5 h-5 text-secondary" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Last updated</p>
+                          <p className="text-sm font-medium">{formatDate(user.profile.updated_at)}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* View Full Profile Button */}
+                  <div className="pt-4">
+                    <Button
+                      variant="outline"
+                      className="w-full md:w-auto hover:bg-primary hover:text-primary-foreground transition-colors"
+                      onClick={() => navigate("/profile")}
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      View Full Profile
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
               </div>
-              <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
-                {loadingPortfolios ? (
-                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-                ) : (
-                  portfoliosCount
-                )}
-              </div>
-              <div className="text-muted-foreground font-medium">Portfolios Created</div>
             </div>
           </Card>
-          <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-md hover:shadow-2xl hover:scale-105 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <Globe className="w-6 h-6 text-white" />
+        </div>
+
+        {/* Account Statistics Section */}
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-1 h-8 bg-gradient-primary rounded-full"></div>
+            <h2 className="text-2xl md:text-3xl font-bold">Account Statistics</h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-md hover:shadow-2xl hover:scale-105 transition-all duration-300 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <FolderOpen className="w-6 h-6 text-white" />
+                  </div>
                 </div>
-              </div>
-              <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
-                {Array.isArray(portfolios) ? portfolios.filter((p) => p.is_published).length : 0}
-              </div>
-              <div className="text-muted-foreground font-medium">Published</div>
-            </div>
-          </Card>
-          <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-md hover:shadow-2xl hover:scale-105 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <FileEdit className="w-6 h-6 text-white" />
+                <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
+                  {loadingPortfolios ? (
+                    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                  ) : (
+                    portfoliosCount
+                  )}
                 </div>
+                <div className="text-muted-foreground font-medium">Portfolios Created</div>
               </div>
-              <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
-                {Array.isArray(portfolios) ? portfolios.filter((p) => !p.is_published).length : 0}
+            </Card>
+            <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-md hover:shadow-2xl hover:scale-105 transition-all duration-300 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <Globe className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
+                  {Array.isArray(portfolios) ? portfolios.filter((p) => p.is_published).length : 0}
+                </div>
+                <div className="text-muted-foreground font-medium">Published</div>
               </div>
-              <div className="text-muted-foreground font-medium">Drafts</div>
-            </div>
-          </Card>
+            </Card>
+            <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-md hover:shadow-2xl hover:scale-105 transition-all duration-300 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <FileEdit className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <div className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+                  {Array.isArray(portfolios) ? portfolios.filter((p) => !p.is_published).length : 0}
+                </div>
+                <div className="text-muted-foreground font-medium">Drafts</div>
+              </div>
+            </Card>
+          </div>
         </div>
 
         {/* Recent Portfolios */}

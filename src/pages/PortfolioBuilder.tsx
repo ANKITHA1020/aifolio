@@ -67,8 +67,9 @@ import {
   Filter,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { portfolioApi, authApi, api, projectApi, blogApi } from "@/lib/api";
+import { portfolioApi, authApi, api, projectApi, blogApi, resumeApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ProfilePhotoUpload from "@/components/portfolio/ProfilePhotoUpload";
 import AIAssistant from "@/components/portfolio/AIAssistant";
 import SEOSettings from "@/components/portfolio/SEOSettings";
@@ -227,6 +228,9 @@ const PortfolioBuilder = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [resumeData, setResumeData] = useState<Record<string, any> | null>(null);
   const [loadingResumeData, setLoadingResumeData] = useState(false);
+  const [availableResumes, setAvailableResumes] = useState<Array<{id: number; file: string; uploaded_at: string; status: string}>>([]);
+  const [selectedResumeId, setSelectedResumeId] = useState<number | null>(null);
+  const [loadingResumes, setLoadingResumes] = useState(false);
   const [activeTab, setActiveTab] = useState<"components" | "settings" | "seo" | "preview">("components");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -304,16 +308,61 @@ const PortfolioBuilder = () => {
       loadPortfolio(parseInt(portfolioId));
     }
 
-    // Load resume data
+    // Load available resumes and resume data
+    loadAvailableResumes();
     loadResumeData();
   }, [location, isAuthenticated]);
 
-  const loadResumeData = async () => {
+  // Refresh resume data when window regains focus (user might have parsed a new resume)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (isAuthenticated) {
+        loadAvailableResumes();
+        if (selectedResumeId) {
+          loadResumeData(selectedResumeId);
+        } else {
+          loadResumeData();
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [isAuthenticated, selectedResumeId]);
+
+  const loadAvailableResumes = async () => {
+    try {
+      setLoadingResumes(true);
+      const resumes = await resumeApi.getResumes();
+      const completedResumes = resumes.filter((r: any) => r.status === 'completed');
+      setAvailableResumes(completedResumes);
+      
+      // Set selected resume to latest if not already set
+      if (completedResumes.length > 0 && !selectedResumeId) {
+        const latestResume = completedResumes[0];
+        setSelectedResumeId(latestResume.id);
+      }
+    } catch (error) {
+      console.error('Failed to load available resumes:', error);
+      setAvailableResumes([]);
+    } finally {
+      setLoadingResumes(false);
+    }
+  };
+
+  const loadResumeData = async (resumeId?: number | null) => {
     try {
       setLoadingResumeData(true);
-      const data = await portfolioApi.getResumeData();
+      const idToLoad = resumeId ?? selectedResumeId;
+      const data = await portfolioApi.getResumeData(idToLoad || undefined);
       if (data.has_resume && data.structured_data) {
         setResumeData(data.structured_data);
+        // Update selected resume ID if it was loaded
+        if (data.resume_id && !selectedResumeId) {
+          setSelectedResumeId(data.resume_id);
+        }
       } else {
         setResumeData(null);
       }
@@ -322,6 +371,39 @@ const PortfolioBuilder = () => {
       setResumeData(null);
     } finally {
       setLoadingResumeData(false);
+    }
+  };
+
+  const handleResumeSelectionChange = async (resumeId: number | null) => {
+    setSelectedResumeId(resumeId);
+    await loadResumeData(resumeId);
+  };
+
+  const handleRefreshResumeData = async () => {
+    await loadAvailableResumes();
+    // After refreshing resumes, check if selected resume still exists
+    const resumes = await resumeApi.getResumes();
+    const completedResumes = resumes.filter((r: any) => r.status === 'completed');
+    
+    if (selectedResumeId) {
+      const resumeExists = completedResumes.some((r: any) => r.id === selectedResumeId);
+      if (!resumeExists && completedResumes.length > 0) {
+        // Selected resume was deleted, switch to latest
+        const latestResume = completedResumes[0];
+        setSelectedResumeId(latestResume.id);
+        await loadResumeData(latestResume.id);
+      } else {
+        await loadResumeData(selectedResumeId);
+      }
+    } else if (completedResumes.length > 0) {
+      // No resume selected, select latest
+      const latestResume = completedResumes[0];
+      setSelectedResumeId(latestResume.id);
+      await loadResumeData(latestResume.id);
+    } else {
+      // No resumes available
+      setSelectedResumeId(null);
+      setResumeData(null);
     }
   };
 
@@ -397,9 +479,15 @@ const PortfolioBuilder = () => {
       }
     }
     
+    // Calculate next available order by finding max order and adding 1
+    const maxOrder = portfolio.components.length > 0 
+      ? Math.max(...portfolio.components.map(c => c.order ?? 0))
+      : -1;
+    const nextOrder = maxOrder + 1;
+    
     const newComponent: Component = {
       component_type: type,
-      order: portfolio.components.length,
+      order: nextOrder,
       is_visible: true,
       content: getDefaultContent(type),
     };
@@ -817,11 +905,14 @@ const PortfolioBuilder = () => {
 
     try {
       const data: any = await portfolioApi.uploadProfilePhoto(portfolio.id, file);
+      // Update local state with photo URLs
       setPortfolio((prev) => ({
         ...prev,
         profile_photo_url: data.profile_photo_url || null,
         user_profile_photo_url: data.user_profile_photo_url || null,
       }));
+      // Reload full portfolio to ensure all data is fresh and up-to-date
+      await loadPortfolio(portfolio.id);
     } catch (error: any) {
       throw error;
     }
@@ -1187,61 +1278,89 @@ const PortfolioBuilder = () => {
             {activeTab === "components" && (
               <div className="space-y-6">
                 {/* Components Header */}
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <div>
-                    <h1 className="text-2xl font-bold">Components</h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Build your portfolio by adding and organizing components
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 w-full lg:max-w-4xl">
+                <div>
+                  <h1 className="text-2xl font-bold">Components</h1>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Build your portfolio by adding and organizing components
+                  </p>
+                </div>
+
+                {/* Component Selection Grid */}
+                <TooltipProvider>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 w-full">
                     {COMPONENT_TYPES.map((type) => {
                       const Icon = type.icon;
                       const isAdded = portfolio.components.some(c => c.component_type === type.value);
                       return (
-                        <Button
-                          key={type.value}
-                          variant={isAdded ? "secondary" : "outline"}
-                      size="sm"
-                      onClick={() => handleAddComponent(type.value)}
-                          disabled={isAdded}
-                          title={isAdded ? `${type.label} already added` : `Add ${type.label}`}
-                          className={cn(
-                            "gap-2 relative transition-all duration-200 group",
-                            "shadow-sm hover:shadow-md",
-                            "border-2",
-                            isAdded 
-                              ? "opacity-75 cursor-not-allowed bg-muted/50 border-muted" 
-                              : cn(
-                                  type.color,
-                                  "hover:scale-105 hover:border-primary/50",
-                                  "active:scale-95"
-                                ),
-                            "font-medium"
-                          )}
-                        >
-                          <div className={cn(
-                            "flex items-center gap-2",
-                            isAdded && "opacity-60"
-                          )}>
-                            <Icon className={cn(
-                              "w-4 h-4 transition-transform duration-200",
-                              !isAdded && "group-hover:scale-110"
-                            )} />
-                            <span className="text-xs sm:text-sm">{type.label}</span>
-                          </div>
-                          {isAdded && (
-                            <div className="absolute -top-1 -right-1">
-                              <div className="bg-green-500 rounded-full p-0.5">
-                                <Check className="w-2.5 h-2.5 text-white" />
+                        <Tooltip key={type.value}>
+                          <TooltipTrigger asChild>
+                            <Card
+                              onClick={() => !isAdded && handleAddComponent(type.value)}
+                              className={cn(
+                                "relative p-3 cursor-pointer transition-all duration-200 group",
+                                "border hover:shadow-md hover:shadow-primary/5",
+                                "hover:-translate-y-0.5",
+                                isAdded
+                                  ? "opacity-60 cursor-not-allowed bg-muted/20 border-muted/50"
+                                  : cn(
+                                      "hover:border-primary/30",
+                                      type.color,
+                                      "hover:bg-gradient-to-br hover:from-background hover:to-muted/10"
+                                    )
+                              )}
+                            >
+                              {/* Status Badge */}
+                              {isAdded && (
+                                <div className="absolute top-2 right-2 z-10">
+                                  <div className="bg-green-500 rounded-full p-1 shadow-sm">
+                                    <Check className="w-2.5 h-2.5 text-white" />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Icon and Name - Compact Layout */}
+                              <div className="flex items-center gap-2.5">
+                                <div className={cn(
+                                  "p-2 rounded-lg transition-all duration-200 flex-shrink-0",
+                                  isAdded
+                                    ? "bg-muted/50"
+                                    : cn(
+                                        type.color,
+                                        "group-hover:scale-105"
+                                      )
+                                )}>
+                                  <Icon className={cn(
+                                    "w-5 h-5 transition-transform duration-200",
+                                    !isAdded && "group-hover:scale-110"
+                                  )} />
+                                </div>
+                                
+                                {/* Component Name */}
+                                <div className="flex-1 min-w-0">
+                                  <h3 className={cn(
+                                    "font-medium text-sm leading-tight truncate",
+                                    isAdded ? "text-muted-foreground" : "text-foreground"
+                                  )}>
+                                    {type.label}
+                                  </h3>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                    </Button>
+
+                              {/* Hover Indicator */}
+                              {!isAdded && (
+                                <div className="absolute inset-0 rounded-lg border border-primary/0 group-hover:border-primary/15 transition-all duration-200 pointer-events-none" />
+                              )}
+                            </Card>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p className="font-medium mb-1">{type.label}</p>
+                            <p className="text-xs text-muted-foreground">{type.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       );
                     })}
-                </div>
-              </div>
+                  </div>
+                </TooltipProvider>
 
                 {/* Components Workspace */}
                 <div className="grid lg:grid-cols-3 gap-6">
@@ -1290,6 +1409,43 @@ const PortfolioBuilder = () => {
                                 {portfolio.components.filter(c => c.is_visible).length} of {portfolio.components.length} visible
                               </span>
                             </div>
+                            
+                            {/* Profile Photo Component - Special non-draggable component */}
+                            {portfolio.id && (
+                              <Card className="p-4 rounded-lg transition-all duration-200 hover:shadow-md hover:border-primary/50 border border-solid shadow-sm group mb-2">
+                                <div className="flex items-start gap-3">
+                                  {/* Icon placeholder (no drag handle) */}
+                                  <div className="p-3 rounded-xl bg-purple-500/10 text-purple-500 border-2 border-purple-500/20 flex-shrink-0">
+                                    <User className="w-5 h-5" />
+                                  </div>
+                                  
+                                  {/* Component details */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2 mb-3">
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <h3 className="font-semibold text-base">Profile Photo</h3>
+                                        <span className="px-2 py-0.5 bg-green-500/10 text-green-500 rounded-full text-xs font-medium flex items-center gap-1">
+                                          <Eye className="w-3 h-3" />
+                                          Always Visible
+                                        </span>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Profile Photo Upload Component - embedded without its own card wrapper */}
+                                    <div className="mt-2">
+                                      <ProfilePhotoUpload
+                                        currentPhotoUrl={portfolio.profile_photo_url}
+                                        userPhotoUrl={portfolio.user_profile_photo_url}
+                                        onUpload={handlePhotoUpload}
+                                        onRemove={handlePhotoRemove}
+                                        className="border-0 shadow-none p-0 rounded-lg"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </Card>
+                            )}
+                            
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -1344,9 +1500,11 @@ const PortfolioBuilder = () => {
                   component={editingComponent}
                   onUpdate={handleUpdateComponent}
                   onCancel={() => setEditingComponent(null)}
-                            portfolioId={portfolio.id}
-                            resumeData={resumeData}
-                          />
+                  portfolioId={portfolio.id}
+                  resumeData={resumeData}
+                  selectedResumeId={selectedResumeId}
+                  portfolio={portfolio}
+                />
                         </div>
                       </Card>
                     ) : (
@@ -1374,25 +1532,6 @@ const PortfolioBuilder = () => {
                   </p>
                 </div>
                 <div className="grid md:grid-cols-2 gap-6">
-                  {/* Profile Photo */}
-                  {portfolio.id ? (
-                    <ProfilePhotoUpload
-                      currentPhotoUrl={portfolio.profile_photo_url}
-                      userPhotoUrl={portfolio.user_profile_photo_url}
-                      onUpload={handlePhotoUpload}
-                      onRemove={handlePhotoRemove}
-                    />
-                  ) : (
-                    <Card className="p-6 shadow-sm border">
-                      <div className="text-center py-8">
-                        <User className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-sm text-muted-foreground">
-                          Save your portfolio to upload a profile photo
-                        </p>
-                      </div>
-            </Card>
-                  )}
-
                   {/* Template Settings */}
                   <Card className="p-6 shadow-sm border">
                     <div className="space-y-4">
@@ -1483,6 +1622,12 @@ const PortfolioBuilder = () => {
 
                     <ResumeDataPanel
                       resumeData={resumeData as ResumeData | null}
+                      availableResumes={availableResumes}
+                      selectedResumeId={selectedResumeId}
+                      loadingResumes={loadingResumes}
+                      loadingResumeData={loadingResumeData}
+                      onResumeSelect={handleResumeSelectionChange}
+                      onRefresh={handleRefreshResumeData}
                       onFillComponent={(componentType) => {
                         const comp = portfolio.components.find(c => c.component_type === componentType);
                         if (comp) {
@@ -1574,9 +1719,11 @@ interface ComponentEditorProps {
   onCancel: () => void;
   portfolioId?: number;
   resumeData?: Record<string, any> | null;
+  selectedResumeId?: number | null;
+  portfolio?: any;
 }
 
-const ComponentEditor = ({ component, onUpdate, onCancel, portfolioId, resumeData }: ComponentEditorProps) => {
+const ComponentEditor = ({ component, onUpdate, onCancel, portfolioId, resumeData, selectedResumeId, portfolio }: ComponentEditorProps) => {
   const [content, setContent] = useState(component.content);
   const [availableProjects, setAvailableProjects] = useState<any[]>([]);
   const [availableBlogPosts, setAvailableBlogPosts] = useState<any[]>([]);
@@ -1675,9 +1822,24 @@ const ComponentEditor = ({ component, onUpdate, onCancel, portfolioId, resumeDat
       setShowAISuggestions(false);
       setAiGeneratedContent(null);
       
+      // Ensure we use the latest resume data from selected resume
+      let currentResumeData = resumeData;
+      if (selectedResumeId) {
+        try {
+          const data = await portfolioApi.getResumeData(selectedResumeId);
+          if (data.has_resume && data.structured_data) {
+            currentResumeData = data.structured_data;
+          }
+        } catch (error) {
+          console.error('Failed to fetch selected resume data for AI:', error);
+          // Fall back to existing resumeData
+        }
+      }
+      
       const context: Record<string, any> = {
-        resume_data: resumeData || {},
-        template_type: 'modern', // Default template type
+        resume_data: currentResumeData || {},
+        template_type: portfolio.template_type || 'modern',
+        resume_id: selectedResumeId || undefined,
       };
 
       const response = await portfolioApi.generateContent(
@@ -1733,31 +1895,36 @@ const ComponentEditor = ({ component, onUpdate, onCancel, portfolioId, resumeDat
     if (!resumeData) {
       toast({
         title: "No Resume Data",
-        description: "Please upload and parse a resume first",
+        description: "Please upload and parse a resume first, or select a resume from the Resume Data panel",
         variant: "destructive",
       });
       return;
     }
     
-    // Initialize field mappings if not already done
-    if (fieldMappings.length === 0) {
-      try {
-        const mappings = getDefaultFieldMappings(component.component_type, resumeData as ResumeData);
-        setFieldMappings(mappings);
-        if (mappings.length > 0) {
-          const selectedFields = mappings.reduce((acc, m) => ({ ...acc, [m.resumeField]: m.enabled }), {});
-          const preview = previewFieldMapping(component.component_type, resumeData as ResumeData, selectedFields);
-          setMappingPreview(preview);
-        }
-      } catch (error) {
-        console.error('Error initializing field mappings:', error);
+    // Always re-initialize field mappings to ensure they match current resume data
+    try {
+      const mappings = getDefaultFieldMappings(component.component_type, resumeData as ResumeData);
+      setFieldMappings(mappings);
+      if (mappings.length > 0) {
+        const selectedFields = mappings.reduce((acc, m) => ({ ...acc, [m.resumeField]: m.enabled }), {});
+        const preview = previewFieldMapping(component.component_type, resumeData as ResumeData, selectedFields);
+        setMappingPreview(preview);
+      } else {
         toast({
-          title: "Error",
-          description: "Failed to initialize field mappings",
+          title: "No Matching Fields",
+          description: "No matching resume fields found for this component type",
           variant: "destructive",
         });
         return;
       }
+    } catch (error) {
+      console.error('Error initializing field mappings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to initialize field mappings",
+        variant: "destructive",
+      });
+      return;
     }
     
     setShowResumeMapping(true);

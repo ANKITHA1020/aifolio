@@ -14,7 +14,11 @@ import zipfile
 import tempfile
 import platform
 import logging
+import base64
+import mimetypes
+from urllib.parse import urlparse
 from django.conf import settings
+from django.core.files.storage import default_storage
 
 logger = logging.getLogger(__name__)
 
@@ -164,29 +168,145 @@ def get_platform_specific_instructions():
         }
 
 
+def image_to_base64(image_url, request):
+    """
+    Convert image URL to base64 data URI for offline viewing
+    """
+    if not image_url:
+        return None
+    
+    try:
+        # Handle absolute URLs
+        if image_url.startswith('http://') or image_url.startswith('https://'):
+            # For external URLs, try to fetch if it's from our domain
+            parsed = urlparse(image_url)
+            if request and parsed.netloc == request.get_host():
+                # It's from our domain, convert to relative path
+                image_path = parsed.path
+            else:
+                # External URL, return as is (will need internet connection)
+                return image_url
+        else:
+            # Relative URL
+            image_path = image_url
+        
+        # Remove leading slash if present
+        if image_path.startswith('/'):
+            image_path = image_path[1:]
+        
+        # Try to read from media storage
+        if default_storage.exists(image_path):
+            with default_storage.open(image_path, 'rb') as f:
+                image_data = f.read()
+                mime_type, _ = mimetypes.guess_type(image_path)
+                if not mime_type:
+                    mime_type = 'image/jpeg'  # Default
+                base64_data = base64.b64encode(image_data).decode('utf-8')
+                return f"data:{mime_type};base64,{base64_data}"
+        else:
+            # If file doesn't exist in storage, try to build absolute URL
+            if request:
+                return request.build_absolute_uri(image_url)
+            return image_url
+    except Exception as e:
+        logger.warning(f"Failed to convert image to base64: {image_url}, error: {str(e)}")
+        # Fallback to original URL
+        if request:
+            try:
+                return request.build_absolute_uri(image_url)
+            except:
+                return image_url
+        return image_url
+
+
 def get_portfolio_context(portfolio, request):
     """
     Get portfolio data organized by component type for template rendering
+    Includes all components sorted by order
     """
     # Get portfolio with all components
     serializer = PortfolioSerializer(portfolio, context={'request': request})
     portfolio_data = serializer.data
     
-    # Organize components by type
-    components = portfolio_data.get('components', [])
+    # Get all components and filter visible ones
+    all_components = portfolio_data.get('components', [])
+    visible_components = [
+        comp for comp in all_components 
+        if comp.get('is_visible', True)
+    ]
+    
+    # Sort components by order
+    visible_components.sort(key=lambda x: x.get('order', 0))
+    
+    # Convert image URLs to base64 for offline viewing
+    # Handle profile photos
+    if portfolio_data.get('profile_photo_url'):
+        portfolio_data['profile_photo_url'] = image_to_base64(
+            portfolio_data['profile_photo_url'], request
+        )
+    if portfolio_data.get('user_profile_photo_url'):
+        portfolio_data['user_profile_photo_url'] = image_to_base64(
+            portfolio_data['user_profile_photo_url'], request
+        )
+    
+    # Convert images in component content
+    for component in visible_components:
+        content = component.get('content', {})
+        if isinstance(content, dict):
+            # Handle various image fields
+            image_fields = ['image', 'background_image', 'photo', 'avatar', 'featured_image']
+            for field in image_fields:
+                if field in content and content[field]:
+                    content[field] = image_to_base64(content[field], request)
+            
+            # Handle nested structures (projects, posts, etc.)
+            if 'projects' in content and isinstance(content['projects'], list):
+                for project in content['projects']:
+                    if isinstance(project, dict) and 'image' in project:
+                        project['image'] = image_to_base64(project.get('image'), request)
+            
+            if 'posts' in content and isinstance(content['posts'], list):
+                for post in content['posts']:
+                    if isinstance(post, dict) and 'featured_image' in post:
+                        post['featured_image'] = image_to_base64(post.get('featured_image'), request)
+            
+            if 'experiences' in content and isinstance(content['experiences'], list):
+                for exp in content['experiences']:
+                    if isinstance(exp, dict) and 'image' in exp:
+                        exp['image'] = image_to_base64(exp.get('image'), request)
+            
+            if 'testimonials' in content and isinstance(content['testimonials'], list):
+                for testimonial in content['testimonials']:
+                    if isinstance(testimonial, dict) and 'avatar' in testimonial:
+                        testimonial['avatar'] = image_to_base64(testimonial.get('avatar'), request)
+    
+    # Map component types for backward compatibility
     components_by_type = {}
-    for component in components:
+    for component in visible_components:
         comp_type = component.get('component_type')
         if comp_type:
+            # Map new types to legacy types for template compatibility
+            type_mapping = {
+                'hero_banner': 'header',
+                'about_me_card': 'about',
+                'skills_cloud': 'skills',
+                'project_grid': 'projects',
+                'blog_preview_grid': 'blog',
+                'contact_form': 'contact',
+            }
+            legacy_type = type_mapping.get(comp_type, comp_type)
+            # Store both new and legacy type mappings
             components_by_type[comp_type] = component
+            if legacy_type != comp_type:
+                components_by_type[legacy_type] = component
     
-    # Extract specific components
-    header_component = components_by_type.get('header')
-    about_component = components_by_type.get('about')
-    skills_component = components_by_type.get('skills')
-    projects_component = components_by_type.get('projects')
-    blog_component = components_by_type.get('blog')
-    contact_component = components_by_type.get('contact')
+    # Extract specific components for backward compatibility
+    header_component = components_by_type.get('header') or components_by_type.get('hero_banner')
+    about_component = components_by_type.get('about') or components_by_type.get('about_me_card')
+    skills_component = components_by_type.get('skills') or components_by_type.get('skills_cloud')
+    projects_component = components_by_type.get('projects') or components_by_type.get('project_grid')
+    blog_component = components_by_type.get('blog') or components_by_type.get('blog_preview_grid')
+    contact_component = components_by_type.get('contact') or components_by_type.get('contact_form')
     
     # Normalize contact component to handle nested social links
     if contact_component and contact_component.get('content'):
@@ -203,8 +323,13 @@ def get_portfolio_context(portfolio, request):
                 if not content.get('website') and social.get('website'):
                     content['website'] = social['website']
     
+    # Check if there's a footer component
+    has_footer = any(comp.get('component_type') == 'footer' for comp in visible_components)
+    
     return {
         'portfolio': portfolio_data,
+        'components': visible_components,  # All components in order
+        'has_footer': has_footer,
         'header_component': header_component,
         'about_component': about_component,
         'skills_component': skills_component,

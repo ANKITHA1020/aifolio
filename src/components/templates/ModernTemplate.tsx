@@ -62,16 +62,20 @@ export default function ModernTemplate({ portfolio, templateConfig }: ModernTemp
     ? projectGridComponent.content.projects.filter((project: any) => project && project.image)
     : [];
 
+  // Show profile photo in header only if About Me component doesn't exist
+  const hasProfilePhoto = portfolio.profile_photo_url || portfolio.user_profile_photo_url;
+  const shouldShowHeader = headerComponent || (hasProfilePhoto && !aboutMeCardComponent);
+
   return (
     <div ref={containerRef} className="template-modern template-container">
-      {headerComponent && (
+      {shouldShowHeader && (
         <TemplateHeader
-          title={headerComponent.content.title || portfolio.title}
-          subtitle={headerComponent.content.subtitle}
+          title={headerComponent?.content?.title || portfolio.title}
+          subtitle={headerComponent?.content?.subtitle}
           templateType="modern"
           config={templateConfig}
-          profilePhotoUrl={portfolio.profile_photo_url}
-          userProfilePhotoUrl={portfolio.user_profile_photo_url}
+          profilePhotoUrl={!aboutMeCardComponent ? portfolio.profile_photo_url : undefined}
+          userProfilePhotoUrl={!aboutMeCardComponent ? portfolio.user_profile_photo_url : undefined}
         />
       )}
 
@@ -97,6 +101,8 @@ export default function ModernTemplate({ portfolio, templateConfig }: ModernTemp
           socialLinks={aboutMeCardComponent.content.social_links}
           templateType="modern"
           config={templateConfig}
+          profilePhotoUrl={portfolio.profile_photo_url}
+          userProfilePhotoUrl={portfolio.user_profile_photo_url}
         />
       )}
 

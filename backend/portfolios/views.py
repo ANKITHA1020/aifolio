@@ -58,13 +58,13 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             from django.utils import timezone
             portfolio.published_at = timezone.now()
         portfolio.save()
-        return Response(PortfolioSerializer(portfolio).data)
+        return Response(PortfolioSerializer(portfolio, context={'request': request}).data)
     
     @action(detail=True, methods=['get'])
     def preview(self, request, pk=None):
         """Get portfolio preview data"""
         portfolio = self.get_object()
-        serializer = PortfolioSerializer(portfolio)
+        serializer = PortfolioSerializer(portfolio, context={'request': request})
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'], url_path='public/(?P<slug>[^/.]+)', permission_classes=[AllowAny])
@@ -128,8 +128,31 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         
         # Get resume data if available
         resume_data = context.get('resume_data', {})
+        resume_id = context.get('resume_id')
+        
+        # If resume_id is provided, use that specific resume
+        if resume_id and not resume_data:
+            try:
+                from resumes.models import ResumeUpload
+                resume = ResumeUpload.objects.filter(
+                    id=resume_id,
+                    user=request.user,
+                    status='completed'
+                ).select_related('extracted_data').first()
+                
+                if resume:
+                    try:
+                        resume_data_obj = resume.extracted_data
+                        if resume_data_obj and resume_data_obj.structured_data:
+                            resume_data = resume_data_obj.structured_data
+                    except AttributeError:
+                        pass
+            except Exception as e:
+                print(f"Error fetching resume data by ID: {e}")
+                pass
+        
+        # If no resume_data yet, try to get latest resume (backward compatibility)
         if not resume_data:
-            # Try to get from user's uploaded resumes
             try:
                 from resumes.models import ResumeUpload
                 latest_resume = ResumeUpload.objects.filter(
@@ -246,22 +269,46 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def resume_data(self, request):
-        """Get latest resume data for the current user"""
+        """Get resume data for the current user. Optionally accepts resume_id query parameter."""
         try:
             from resumes.models import ResumeUpload
-            latest_resume = ResumeUpload.objects.filter(
-                user=request.user,
-                status='completed'
-            ).select_related('extracted_data').order_by('-uploaded_at').first()
+            resume_id = request.query_params.get('resume_id')
             
-            if latest_resume:
+            if resume_id:
+                # Get specific resume
                 try:
-                    resume_data_obj = latest_resume.extracted_data
+                    resume_id_int = int(resume_id)
+                    resume = ResumeUpload.objects.get(
+                        id=resume_id_int,
+                        user=request.user,
+                        status='completed'
+                    )
+                except (ResumeUpload.DoesNotExist, ValueError):
+                    return Response(
+                        {
+                            'error': 'Resume not found or invalid resume_id',
+                            'has_resume': False,
+                            'structured_data': {}
+                        },
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+            else:
+                # Get latest resume (backward compatibility)
+                resume = ResumeUpload.objects.filter(
+                    user=request.user,
+                    status='completed'
+                ).select_related('extracted_data').order_by('-uploaded_at').first()
+            
+            if resume:
+                try:
+                    resume_data_obj = resume.extracted_data
                     if resume_data_obj and resume_data_obj.structured_data:
                         return Response({
-                            'resume_id': latest_resume.id,
+                            'resume_id': resume.id,
                             'structured_data': resume_data_obj.structured_data,
-                            'has_resume': True
+                            'has_resume': True,
+                            'filename': resume.file.name.split('/')[-1] if resume.file else None,
+                            'uploaded_at': resume.uploaded_at.isoformat() if resume.uploaded_at else None
                         })
                 except AttributeError:
                     # extracted_data relationship doesn't exist

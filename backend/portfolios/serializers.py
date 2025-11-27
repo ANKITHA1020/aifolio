@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db.models import Max
 from .models import Portfolio, PortfolioComponent, PortfolioSettings, Template
 
 
@@ -30,9 +31,21 @@ class PortfolioComponentSerializer(serializers.ModelSerializer):
                 order=attrs['order']
             ).exclude(pk=self.instance.pk if self.instance else None)
             if existing.exists():
-                raise serializers.ValidationError({
-                    'order': f'Component with order {attrs["order"]} already exists'
-                })
+                # Auto-assign next available order instead of raising error
+                max_order = PortfolioComponent.objects.filter(
+                    portfolio=portfolio
+                ).exclude(pk=self.instance.pk if self.instance else None).aggregate(
+                    max_order=Max('order')
+                )['max_order'] or -1
+                attrs['order'] = max_order + 1
+        elif portfolio and 'order' not in attrs:
+            # If order not provided, auto-assign next available order
+            max_order = PortfolioComponent.objects.filter(
+                portfolio=portfolio
+            ).exclude(pk=self.instance.pk if self.instance else None).aggregate(
+                max_order=Max('order')
+            )['max_order'] or -1
+            attrs['order'] = max_order + 1
         return attrs
 
 
@@ -60,9 +73,14 @@ class PortfolioSerializer(serializers.ModelSerializer):
     def get_profile_photo_url(self, obj):
         if obj.profile_photo:
             request = self.context.get('request')
+            url = obj.profile_photo.url
             if request:
-                return request.build_absolute_uri(obj.profile_photo.url)
-            return obj.profile_photo.url
+                url = request.build_absolute_uri(url)
+            # Add cache-busting parameter using updated_at timestamp
+            if obj.updated_at:
+                separator = '&' if '?' in url else '?'
+                url = f"{url}{separator}v={obj.updated_at.timestamp()}"
+            return url
         return None
     
     def get_user_profile_photo_url(self, obj):
@@ -70,9 +88,14 @@ class PortfolioSerializer(serializers.ModelSerializer):
         try:
             if obj.user.profile and obj.user.profile.photo:
                 request = self.context.get('request')
+                url = obj.user.profile.photo.url
                 if request:
-                    return request.build_absolute_uri(obj.user.profile.photo.url)
-                return obj.user.profile.photo.url
+                    url = request.build_absolute_uri(url)
+                # Add cache-busting parameter using user profile updated_at timestamp
+                if hasattr(obj.user.profile, 'updated_at') and obj.user.profile.updated_at:
+                    separator = '&' if '?' in url else '?'
+                    url = f"{url}{separator}v={obj.user.profile.updated_at.timestamp()}"
+                return url
         except:
             pass
         return None
