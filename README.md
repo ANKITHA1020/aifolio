@@ -1,8 +1,11 @@
-# Welcome to your Lovable project
+# aifolio — AI Portfolio Builder
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/0021db6e-9295-4afc-b6d4-32ce24123e91
+- **Repository**: https://github.com/ANKITHA1020/aifolio.git
+- **Short description**: AI-powered multi-page portfolio builder (React + Vite frontend, Django backend).
+
+**Lovable project URL**: https://lovable.dev/projects/0021db6e-9295-4afc-b6d4-32ce24123e91
 
 ## How can I edit this code?
 
